@@ -98,7 +98,7 @@ const ProxiConnectLanding = () => {
                 href="#" 
                 className="px-6 py-2.5 rounded-full text-sm font-medium text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-200"
               >
-                Sign In
+                I DONT WANNA
               </a>
             </div>
           </div>
