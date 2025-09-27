@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
+const ProxiConnectLanding = () => {
   const [activeTab, setActiveTab] = useState('attendees');
   const [headerScrolled, setHeaderScrolled] = useState(false);
 
