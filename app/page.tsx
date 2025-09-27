@@ -32,7 +32,7 @@ const ProxiConnectLanding = () => {
     </div>
   );
 
-  const PersonIcon = ({ delay, color }) => (
+  const PersonIcon = ({ delay, color }: {delay: any; color: any;}) => (
     <div 
       className={`w-12 h-12 rounded-full flex items-center justify-center text-xl text-white ${color}`}
       style={{
@@ -44,7 +44,7 @@ const ProxiConnectLanding = () => {
     </div>
   );
 
-  const ConnectionDot = ({ children, color, delay }) => (
+  const ConnectionDot = ({ children, color, delay }: {children: any, color:any, delay:any;}) => (
     <div 
       className={`w-10 h-10 rounded-full flex items-center justify-center text-base text-white ${color}`}
       style={{
