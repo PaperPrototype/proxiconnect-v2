@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import supabase from '@/lib/supabase';
+import QRCode from 'qrcode';
+import Link from "next/link";
 
 // TODO create an event with supabase and relate it to the profile_id stored in 
 
@@ -48,6 +50,8 @@ const NewEventFlow = () => {
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [qrLoading, setQrLoading] = useState<boolean>(false);
 
   // AI UX
   const [aiLoading, setAiLoading] = useState(false);
@@ -86,6 +90,32 @@ const NewEventFlow = () => {
     { id: 2, title: "Icebreaker", icon: "🎯", color: "from-pink-500 to-purple-500" },
     { id: 3, title: "Review & create", icon: "🚀", color: "from-purple-500 to-blue-500" },
   ];
+
+  useEffect(() => {
+    if (eventId) {
+      generateQRCode(eventId);
+    }
+  }, [eventId]);
+
+  const generateQRCode = async (code: string) => {
+    try {
+      setQrLoading(true);
+      const joinUrl = buildJoinUrl(code);
+      const qrDataUrl = await QRCode.toDataURL(joinUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#1f2937', // Dark gray
+          light: '#ffffff', // White
+        },
+      });
+      setQrCodeUrl(qrDataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    } finally {
+      setQrLoading(false);
+    }
+  };
 
   const updateEventData = (field: keyof EventData, value: string | boolean) => {
     setEventData((prev) => ({ ...prev, [field]: value }));
@@ -591,12 +621,24 @@ const NewEventFlow = () => {
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 border-2 border-blue-200">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Share Your Event</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                {/* QR placeholder */}
-                <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-6 flex items-center justify-center">
-                  <div className="w-48 h-48 md:w-56 md:h-56 bg-gray-200 flex items-center justify-center text-gray-500 font-semibold rounded">
+              {/* QR Code */}
+              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 flex items-center justify-center">
+                {qrLoading ? (
+                  <div className="w-48 h-48 md:w-56 md:h-56 flex items-center justify-center">
+                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : qrCodeUrl ? (
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="Event QR Code" 
+                    className="w-48 h-48 md:w-56 md:h-56"
+                  />
+                ) : (
+                  <div className="w-48 h-48 md:w-56 md:h-56 bg-gray-100 flex items-center justify-center text-gray-500 font-semibold rounded">
                     QR Code
                   </div>
-                </div>
+                )}
+              </div>
 
                 {/* 6-digit ID (click to copy) */}
                 <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
@@ -635,16 +677,16 @@ const NewEventFlow = () => {
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <Link href="/create-event" className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Create a new event
-              </h1>
+              </Link>
               <p className="text-gray-600 mt-1">Set the basics, choose an icebreaker, then review.</p>
             </div>
             <button
               onClick={() => setShowHelp(!showHelp)}
               className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg"
             >
-              ?
+              🐼
             </button>
           </div>
 

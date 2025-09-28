@@ -92,7 +92,7 @@ const SignupPopup = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60] text-black">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
@@ -361,7 +361,7 @@ const ProxiConnectLanding = () => {
             <div className="flex justify-center items-center gap-10 flex-wrap">
               <div className="bg-white p-10 rounded-2xl shadow-lg border border-gray-100 text-center hover:-translate-y-1 transition-transform duration-300">
                 <QRCode />
-                <h3 className="text-xl font-medium mb-2">Scan QR Code</h3>
+                <h3 className="text-xl font-medium mb-2 text-gray-800">Scan QR Code</h3>
                 <p className="text-gray-600">Quick check-in</p>
               </div>
               
@@ -390,7 +390,7 @@ const ProxiConnectLanding = () => {
         </section>
 
         {/* How It Works */}
-        <section className="py-20">
+        <section className="py-20 text-black">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-4xl font-normal text-center mb-16 text-gray-800">
               How it works
@@ -476,7 +476,7 @@ const ProxiConnectLanding = () => {
         </section>
 
         {/* Why People Love It */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-20 bg-gray-50 text-black">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-4xl font-normal text-center mb-16 text-gray-800">
               Why people love it
@@ -510,7 +510,7 @@ const ProxiConnectLanding = () => {
         </section>
 
         {/* Use Cases */}
-        <section className="py-20">
+        <section className="py-20 text-black">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-4xl font-normal text-center mb-16 text-gray-800">
               Perfect for every gathering
@@ -586,7 +586,7 @@ const ProxiConnectLanding = () => {
               <a href="#" className="text-sm text-gray-600 hover:text-gray-800">Privacy</a>
             </div>
           </div>
-          <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded mt-6"></div>
+          <div className="w-full h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded mt-6"></div>
         </div>
       </footer>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import supabase from '@/lib/supabase';
+import Link from 'next/link';
 import React, { useState, useEffect, Dispatch, SetStateAction, useMemo } from 'react';
 
 const WouldYouRatherGame = () => {
@@ -240,9 +241,9 @@ const WouldYouRatherGame = () => {
               Next Question →
             </button>
           ) : (
-            <div className="bg-green-600 text-white px-6 py-2 rounded-full font-medium shadow-lg">
+            <Link href={"/event/" + eventId} className="bg-green-600 text-white px-6 py-2 rounded-full font-medium shadow-lg">
               Game Complete! 🎉
-            </div>
+            </Link>
           )}
         </div>
       </div>
