@@ -69,49 +69,21 @@ const CreateEventPage = () => {
         </div>
       </main>
 
-      {/* Simple Plus Button */}
+      {/* Clean Plus Button */}
       <div className="fixed bottom-8 right-8">
         <button 
-          className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all duration-300 hover:scale-110 animate-pulse shadow-lg hover:shadow-xl"
-       onClick={() => {
-        window.location.href = '/create-event/new';
-        }}
-
+          className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+          onClick={() => {
+            alert('Button clicked!');
+            window.location.href = '/create-event/new';
+          }}
         >
           <div className="w-6 h-6 relative">
             <div className="absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2"></div>
             <div className="absolute top-1/2 left-1/2 w-0.5 h-4 bg-white transform -translate-x-1/2 -translate-y-1/2"></div>
           </div>
         </button>
-
-        {/* Pulse Rings */}
-        <div className="absolute inset-0 animate-ping">
-          <div className="w-16 h-16 rounded-full border-2 border-blue-400 opacity-20"></div>
-        </div>
-        <div className="absolute inset-0 animate-ping" style={{ animationDelay: '0.5s' }}>
-          <div className="w-16 h-16 rounded-full border-2 border-blue-300 opacity-15"></div>
-        </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-4px); }
-        }
-        
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        .animate-spin-slow {
-          animation: spin-slow 20s linear infinite;
-        }
-      `}</style>
     </div>
   );
 };
