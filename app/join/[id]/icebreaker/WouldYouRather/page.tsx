@@ -95,7 +95,7 @@ const WouldYouRatherGame = () => {
     cleanData = [...cleanData, ...testQuestions];
 
     console.log("loading questions from supabase")
-    console.log("testQuestions", testQuestions)
+    console.log("cleanData", cleanData)
     setQuestions(cleanData as [])
   }
 
@@ -144,7 +144,7 @@ const WouldYouRatherGame = () => {
 
   const currentQuestion = useMemo(() => {
     return questions.length > 0 ? questions[currentPromptIndex] : testQuestions;
-  }, [questions]);
+  }, [questions, currentPromptIndex]);
 
   if (showResults) {
     // Results View - Slower animated width transition with dynamic colors
