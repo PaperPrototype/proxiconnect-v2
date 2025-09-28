@@ -1,9 +1,9 @@
 // app/api/generate-prompts/route.ts
 import { NextResponse } from "next/server";
 
-const PROXI_BASE_URL = process.env.PROXI_BASE_URL || "https://api.ai.it.ufl.edu/v1";
-const PROXI_API_KEY  = process.env.PROXI_API_KEY; // put your UF key in .env.local
-const PROXI_MODEL    = process.env.PROXI_MODEL || "gpt-3.5-turbo";
+const PROXI_BASE_URL = "https://api.ai.it.ufl.edu/v1";
+const PROXI_API_KEY  = "sk-sxvNLvIEC2ib6iVoPUrEyQ"; // put your UF key in .env.local
+const PROXI_MODEL    = "gpt-oss-20b";
 
 const FALLBACK: { optionA: string; optionB: string }[] = [
   { optionA: "Arrive 15 minutes early", optionB: "Stay 15 minutes late" },
@@ -25,10 +25,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const sys = `You generate pairs of short, punchy "Would You Rather" options.
-Return ONLY a JSON array of objects with exactly:
-[{ "optionA": "...", "optionB": "..." }, ...] (length = ${count})
-Keep each option under 80 characters. No explanations.`;
+    const sys = `You are a game master creating *short, bold, and debate-worthy* "Would You Rather" questions.
+
+Output rules:
+- Return ONLY a JSON array of N objects, each like:
+  [{ "optionA": "…", "optionB": "…" }, …]
+- Each option must be **ultra short** (max 5 words).
+- The two options should feel like rival fandoms, strong lifestyle splits, or absurdly funny opposites that will spark arguments.
+- Example style:
+  - "Lose Minecraft" vs "Lose Roblox"
+  - "Pineapple pizza" vs "No pineapple pizza"
+  - "Cats" vs "Dogs"
+  - "TikTok" vs "YouTube"
+  - "Hot weather" vs "Cold weather"
+  - "Be invisible" vs "Fly"
+- If "relatedToEvent" is true, anchor questions in the event’s theme (e.g. coding, gaming, baking), but keep them punchy and arguable.
+- Keep tone playful, modern, and conversational. Avoid long setups, politics, or anything offensive.
+`;
 
     const user = relatedToEvent
       ? `Event name: ${name || "(none)"}\nEvent description: ${description || "(none)"}\nMake them on-theme.`
