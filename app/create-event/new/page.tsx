@@ -157,7 +157,7 @@ const NewEventFlow = () => {
                       onChange={(e) => updateEventData('name', e.target.value)}
                       placeholder="Tech & Tacos: Student Startup Night"
                       maxLength={80}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-700 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300"
+                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300"
                     />
                     <div className="flex justify-between mt-2">
                       <p className="text-gray-600">Use a short, memorable title people can recognize on the projector</p>
@@ -174,7 +174,7 @@ const NewEventFlow = () => {
                       value={eventData.description}
                       onChange={(e) => updateEventData('description', e.target.value)}
                       rows={5}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-700 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-700"
+                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300"
                     />
                     <p className="text-gray-600 mt-2">Describe the vibe, what to expect, and any logistics</p>
                     {errors.description && <p className="text-pink-500 font-medium mt-2">{errors.description}</p>}
@@ -188,7 +188,7 @@ const NewEventFlow = () => {
                         value={eventData.location}
                         onChange={(e) => updateEventData('location', e.target.value)}
                         placeholder="Science Hall, Room 210"
-                        className="w-full px-6 py-4 text-lg border-2 border-gray-700 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300"
+                        className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300"
                       />
                     </div>
                     <div>
