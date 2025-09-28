@@ -60,7 +60,7 @@ const AvatarSelectionPage = () => {
       localStorage.setItem('attendeeName', name.trim());
       localStorage.setItem('eventCode', eventCode);
       
-      // Redirect to Would You Rather game (default for demo)
+      // Redirect to Would You Rather game
       window.location.href = `/join/${eventCode}/icebreaker/WouldYouRather`;
     } catch (err) {
       setError('Something went wrong. Please try again.');
