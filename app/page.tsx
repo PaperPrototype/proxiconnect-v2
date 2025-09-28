@@ -98,7 +98,8 @@ const ProxiConnectLanding = () => {
                 href="#" 
                 className="px-6 py-2.5 rounded-full text-sm font-medium text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-200"
               >
-                I DONT WANNA
+                Sign Up
+                
               </a>
             </div>
           </div>
@@ -118,7 +119,7 @@ const ProxiConnectLanding = () => {
             
             <div className="flex gap-4 justify-center mb-16">
               <a 
-                href="#" 
+                href="/join" 
                 className="px-8 py-4 text-lg font-medium bg-blue-500 text-white rounded-full hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-200"
               >
                 Join an Event
@@ -331,7 +332,7 @@ const ProxiConnectLanding = () => {
             </h2>
             <div className="flex gap-4 justify-center">
               <a 
-                href="#" 
+                href="join" 
                 className="px-8 py-4 text-lg font-medium bg-white text-gray-800 rounded-full hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200"
               >
                 Join an Event
