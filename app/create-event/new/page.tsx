@@ -65,9 +65,8 @@ const NewEventFlow = () => {
 
   const steps: Step[] = [
     { id: 1, title: 'Basic info', icon: '✨', color: 'from-yellow-400 to-orange-500' },
-    { id: 2, title: 'Date & time', icon: '🗓️', color: 'from-orange-500 to-pink-500' },
-    { id: 3, title: 'Icebreaker', icon: '🎯', color: 'from-pink-500 to-purple-500' },
-    { id: 4, title: 'Review & create', icon: '🚀', color: 'from-purple-500 to-blue-500' }
+    { id: 2, title: 'Icebreaker', icon: '🎯', color: 'from-pink-500 to-purple-500' },
+    { id: 3, title: 'Review & create', icon: '🚀', color: 'from-purple-500 to-blue-500' }
   ];
 
   const updateEventData = (field: keyof EventData, value: string | boolean | number) => {
@@ -90,18 +89,6 @@ const NewEventFlow = () => {
     }
 
     if (step === 2) {
-      if (!eventData.startDate) {
-        newErrors.startDate = 'Start date is required';
-      }
-      if (!eventData.startTime) {
-        newErrors.startTime = 'Start time is required';
-      }
-      if (!eventData.endTime) {
-        newErrors.endTime = 'End time is required';
-      }
-    }
-
-    if (step === 3) {
       if (eventData.prompts.length === 0 || !eventData.prompts.some(p => p.optionA && p.optionB)) {
         newErrors.prompts = 'Add at least one complete prompt to continue';
       }
@@ -113,7 +100,7 @@ const NewEventFlow = () => {
 
   const handleContinue = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < 4) {
+      if (currentStep < 3) {
         setCurrentStep(currentStep + 1);
       } else {
         handleCreateEvent();
@@ -258,117 +245,113 @@ const NewEventFlow = () => {
 
       case 2:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-              <div className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-lg font-semibold text-gray-900 mb-3">
-                      Start date <span className="text-orange-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={eventData.startDate}
-                      onChange={(e) => updateEventData('startDate', e.target.value)}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-200 focus:border-orange-500 outline-none transition-all"
-                    />
-                    {errors.startDate && <p className="text-orange-500 font-medium mt-2">{errors.startDate}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-lg font-semibold text-gray-900 mb-3">Time zone</label>
-                    <select
-                      value={eventData.timeZone}
-                      onChange={(e) => updateEventData('timeZone', e.target.value)}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-200 focus:border-orange-500 outline-none transition-all"
-                    >
-                      <option value="America/Los_Angeles">Pacific Time</option>
-                      <option value="America/Denver">Mountain Time</option>
-                      <option value="America/Chicago">Central Time</option>
-                      <option value="America/New_York">Eastern Time</option>
-                    </select>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-3xl p-8 shadow-xl border-4 border-pink-300 transform hover:scale-105 transition-all">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🤔</div>
+                  <h3 className="text-xl font-bold mb-3">Would You Rather</h3>
+                  <p className="mb-4 opacity-90">Two choices. One room. Watch opinions split live.</p>
+                  <div className="bg-white text-pink-600 text-sm font-bold px-4 py-2 rounded-full inline-block">
+                    AVAILABLE NOW
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-lg font-semibold text-gray-900 mb-3">
-                      Start time <span className="text-orange-500">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      value={eventData.startTime}
-                      onChange={(e) => updateEventData('startTime', e.target.value)}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all"
-                    />
-                    {errors.startTime && <p className="text-pink-500 font-medium mt-2">{errors.startTime}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-lg font-semibold text-gray-900 mb-3">
-                      End time <span className="text-orange-500">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      value={eventData.endTime}
-                      onChange={(e) => updateEventData('endTime', e.target.value)}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all"
-                    />
-                    {errors.endTime && <p className="text-pink-500 font-medium mt-2">{errors.endTime}</p>}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-2 border-yellow-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Event Settings</h3>
-                  
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-yellow-200">
-                      <div>
-                        <h4 className="font-bold text-gray-900">Auto-start icebreaker</h4>
-                        <p className="text-gray-600">Automatically begin the fun when doors open</p>
-                      </div>
-                      <button
-                        onClick={() => updateEventData('autoStartIcebreaker', !eventData.autoStartIcebreaker)}
-                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                          eventData.autoStartIcebreaker ? 'bg-gradient-to-r from-green-400 to-blue-500' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-lg ${
-                          eventData.autoStartIcebreaker ? 'translate-x-7' : 'translate-x-1'
-                        }`} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-yellow-200">
-                      <div>
-                        <h4 className="font-bold text-gray-900">Allow late arrivals</h4>
-                        <p className="text-gray-600">Let latecomers join the current activity</p>
-                      </div>
-                      <button
-                        onClick={() => updateEventData('allowLateJoin', !eventData.allowLateJoin)}
-                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                          eventData.allowLateJoin ? 'bg-gradient-to-r from-purple-400 to-pink-500' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-lg ${
-                          eventData.allowLateJoin ? 'translate-x-7' : 'translate-x-1'
-                        }`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {eventData.startDate && eventData.startTime && eventData.endTime && (
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200">
-                    <h4 className="text-lg font-bold text-gray-900 mb-3">Your Schedule</h4>
-                    <div className="bg-white rounded-xl p-4 border border-blue-200">
-                      <p className="text-xl font-semibold text-gray-900">
-                        {new Date(eventData.startDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                      </p>
-                      <p className="text-lg text-gray-700">{eventData.startTime} – {eventData.endTime}</p>
-                      <p className="text-gray-600">{eventData.timeZone.split('/')[1].replace('_', ' ')}</p>
-                    </div>
-                  </div>
-                )}
               </div>
+
+              <div className="bg-gray-100 rounded-3xl p-8 opacity-60 border-2 border-dashed border-gray-300">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🤥</div>
+                  <div className="flex items-center justify-center mb-3">
+                    <h3 className="text-xl font-bold text-gray-500 mr-3">Two Truths & a Lie</h3>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                  </div>
+                  <p className="text-gray-500">Share three statements; the room guesses the fib</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-100 rounded-3xl p-8 opacity-60 border-2 border-dashed border-gray-300">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">💬</div>
+                  <div className="flex items-center justify-center mb-3">
+                    <h3 className="text-xl font-bold text-gray-500 mr-3">Speed Mingles</h3>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                  </div>
+                  <p className="text-gray-500">Timed 1:1 rotations with conversation starters</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+              <h3 className="text-2xl font-bold text-gray-900 mb-8">Configure Would You Rather</h3>
+              
+              <div className="space-y-6 mb-8">
+                {eventData.prompts.map((prompt, index) => (
+                  <div key={index} className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-lg font-bold text-gray-900 mb-3">Option A</label>
+                        <input
+                          type="text"
+                          value={prompt.optionA}
+                          onChange={(e) => updatePrompt(index, 'optionA', e.target.value)}
+                          placeholder="Have the ability to fly"
+                          className="w-full px-6 py-4 text-lg border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all"
+                        />
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="block text-lg font-bold text-gray-900 mb-3">Option B</label>
+                          <input
+                            type="text"
+                            value={prompt.optionB}
+                            onChange={(e) => updatePrompt(index, 'optionB', e.target.value)}
+                            placeholder="Have the ability to turn invisible"
+                            className="w-full px-6 py-4 text-lg border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all"
+                          />
+                        </div>
+                        {eventData.prompts.length > 1 && (
+                          <button
+                            onClick={() => removePrompt(index)}
+                            className="mt-12 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-xl"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-4 mb-8">
+                <button
+                  onClick={addPrompt}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-bold hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
+                >
+                  + Add Another Question
+                </button>
+                <button
+                  onClick={() => {
+                    setEventData(prev => ({
+                      ...prev,
+                      prompts: [
+                        { optionA: 'Arrive early to events', optionB: 'Stay late at events' },
+                        { optionA: 'Build projects solo', optionB: 'Build projects with a team' },
+                        { optionA: 'Work from a beach', optionB: 'Work from a mountain cabin' }
+                      ]
+                    }));
+                  }}
+                  className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl font-bold hover:from-yellow-500 hover:to-orange-600 transform hover:scale-105 transition-all shadow-lg"
+                >
+                  Use Examples
+                </button>
+              </div>
+
+              {errors.prompts && (
+                <div className="mb-8 p-6 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl">
+                  <p className="text-red-700 font-bold text-lg">{errors.prompts}</p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -524,7 +507,7 @@ const NewEventFlow = () => {
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="max-w-4xl mx-auto space-y-8">
             <div className="text-center mb-8">
@@ -554,28 +537,9 @@ const NewEventFlow = () => {
 
             <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
               <div className="flex justify-between items-start mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Schedule</h3>
-                <button
-                  onClick={() => setCurrentStep(2)}
-                  className="px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-2xl font-bold hover:from-orange-500 hover:to-pink-600 transform hover:scale-105 transition-all"
-                >
-                  Edit
-                </button>
-              </div>
-              <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-2xl p-6 border-2 border-orange-200">
-                <p className="text-xl font-semibold text-gray-900 mb-2">
-                  {eventData.startDate && new Date(eventData.startDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
-                <p className="text-lg text-gray-700 mb-2">{eventData.startTime} – {eventData.endTime}</p>
-                <p className="text-gray-600">{eventData.timeZone.split('/')[1].replace('_', ' ')}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-              <div className="flex justify-between items-start mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">Icebreaker</h3>
                 <button
-                  onClick={() => setCurrentStep(3)}
+                  onClick={() => setCurrentStep(2)}
                   className="px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-2xl font-bold hover:from-pink-500 hover:to-purple-600 transform hover:scale-105 transition-all"
                 >
                   Edit
@@ -583,8 +547,8 @@ const NewEventFlow = () => {
               </div>
               <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200">
                 <p className="text-xl font-semibold text-gray-900 mb-2">Would You Rather</p>
-                <p className="text-gray-700 mb-2">{eventData.prompts.length} questions • {eventData.promptDuration} minutes each</p>
-                <p className="text-gray-600">Advance mode: {eventData.advanceMode === 'auto' ? 'Automatic' : 'Manual'}</p>
+                <p className="text-gray-700 mb-2">{eventData.prompts.length} questions</p>
+                <p className="text-gray-600">Interactive voting and discussion prompts</p>
               </div>
             </div>
 
@@ -613,7 +577,7 @@ const NewEventFlow = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Create a new event
               </h1>
-              <p className="text-gray-600 mt-1">Set the basics, schedule the time, choose an icebreaker, then review.</p>
+              <p className="text-gray-600 mt-1">Set the basics, choose an icebreaker, then review.</p>
             </div>
             <button
               onClick={() => setShowHelp(!showHelp)}
@@ -675,7 +639,7 @@ const NewEventFlow = () => {
               onClick={handleContinue}
               className="px-10 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 font-bold transform hover:scale-105 transition-all shadow-lg"
             >
-              {currentStep === 4 ? 'Create Event' : 'Continue'}
+              {currentStep === 3 ? 'Create Event' : 'Continue'}
             </button>
           </div>
         </div>
