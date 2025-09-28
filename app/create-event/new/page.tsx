@@ -147,42 +147,42 @@ const NewEventFlow = () => {
     }
   };
 
- async function handleAIGenerate() {
-  try {
-    setAiError(null);
-    setAiLoading(true);
+  // === AI Generate (calls the secure server route that reads OPENAI_API_KEY) ===
+  async function handleAIGenerate() {
+    try {
+      setAiError(null);
+      setAiLoading(true);
 
-    const count = Math.max(1, eventData.prompts.length || 5);
+      const count = Math.max(1, eventData.prompts.length || 5);
 
-    const res = await fetch("/api/generate-prompts", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: eventData.name,
-        description: eventData.description,
-        count,
-        relatedToEvent,
-      }),
-    });
+      const res = await fetch("/api/generate-prompts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: eventData.name,
+          description: eventData.description,
+          count,
+          relatedToEvent,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data?.usedFallback) {
-      setAiError(`Using fallback prompts. Reason: ${data?.reason || "unknown"}`);
+      if (data?.usedFallback) {
+        setAiError(`Using fallback prompts. Reason: ${data?.reason || "unknown"}`);
+      }
+
+      if (!data?.prompts?.length) {
+        throw new Error("AI returned no prompts (check Network tab for API response).");
+      }
+
+      setEventData((prev) => ({ ...prev, prompts: data.prompts }));
+    } catch (e: any) {
+      setAiError(e?.message || "Could not generate prompts.");
+    } finally {
+      setAiLoading(false);
     }
-
-    if (!data?.prompts?.length) {
-      throw new Error("AI returned no prompts (check Network tab for API response).");
-    }
-
-    setEventData((prev) => ({ ...prev, prompts: data.prompts }));
-  } catch (e: any) {
-    setAiError(e?.message || "Could not generate prompts.");
-  } finally {
-    setAiLoading(false);
   }
-}
-
   // darker input styles
   const inputBase =
     "w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300 text-gray-900 placeholder-gray-400";
