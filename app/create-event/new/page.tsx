@@ -147,39 +147,41 @@ const NewEventFlow = () => {
     }
   };
 
-  // === AI Generate ===
-  async function handleAIGenerate() {
-    try {
-      setAiError(null);
-      setAiLoading(true);
+ async function handleAIGenerate() {
+  try {
+    setAiError(null);
+    setAiLoading(true);
 
-      // generate EXACTLY as many as the host has rows (fallback 5 if empty)
-      const count = Math.max(1, eventData.prompts.length || 5);
+    const count = Math.max(1, eventData.prompts.length || 5);
 
-      const res = await fetch("/api/generate-prompts", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: eventData.name,
-          description: eventData.description,
-          count,
-          relatedToEvent,
-        }),
-      });
+    const res = await fetch("/api/generate-prompts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: eventData.name,
+        description: eventData.description,
+        count,
+        relatedToEvent,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!data?.prompts?.length) {
-        throw new Error("AI returned no prompts (check Network tab for API response).");
-      }
-
-      setEventData((prev) => ({ ...prev, prompts: data.prompts }));
-    } catch (e: any) {
-      setAiError(e?.message || "Could not generate prompts.");
-    } finally {
-      setAiLoading(false);
+    if (data?.usedFallback) {
+      setAiError(`Using fallback prompts. Reason: ${data?.reason || "unknown"}`);
     }
+
+    if (!data?.prompts?.length) {
+      throw new Error("AI returned no prompts (check Network tab for API response).");
+    }
+
+    setEventData((prev) => ({ ...prev, prompts: data.prompts }));
+  } catch (e: any) {
+    setAiError(e?.message || "Could not generate prompts.");
+  } finally {
+    setAiLoading(false);
   }
+}
 
   // darker input styles
   const inputBase =

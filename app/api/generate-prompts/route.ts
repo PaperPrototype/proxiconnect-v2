@@ -1,3 +1,4 @@
+// app/api/generate-prompts/route.ts
 export const runtime = "edge";
 
 type Prompt = { optionA: string; optionB: string };
@@ -15,25 +16,24 @@ function fallback(count: number): Prompt[] {
   return seeds.slice(0, Math.max(1, count));
 }
 
-function safeParsePrompts(text: string): Prompt[] {
-  // Accept:
-  // 1) {"prompts":[...]}
-  // 2) ```json { "prompts": [...] } ```
-  // 3) A bare array [...]
-  const fenced = text.match(/```json\s*([\s\S]*?)```/i)?.[1] ?? text.trim();
+function extractJsonArray(text: string): Prompt[] {
+  // Try codeblock first
+  const code = text.match(/```json\s*([\s\S]*?)```/i)?.[1]
+           ?? text.match(/```\s*([\s\S]*?)```/i)?.[1]
+           ?? text;
+
   try {
-    const obj = JSON.parse(fenced);
-    if (Array.isArray(obj)) return obj.filter(v => v?.optionA && v?.optionB);
-    if (obj && Array.isArray(obj.prompts)) {
-      return obj.prompts
-        .map((p: any) => ({
+    const parsed = JSON.parse(code);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((p) => ({
           optionA: String(p?.optionA ?? "").trim(),
           optionB: String(p?.optionB ?? "").trim(),
         }))
-        .filter((p: Prompt) => p.optionA && p.optionB);
+        .filter((p) => p.optionA && p.optionB);
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    // ignore; we'll fall back
   }
   return [];
 }
@@ -43,42 +43,48 @@ export async function POST(req: Request) {
   const name: string = (body?.name ?? "").toString();
   const description: string = (body?.description ?? "").toString();
   const count: number = Math.max(1, Number(body?.count ?? 5));
-  const relatedToEvent: boolean = Boolean(
-    body?.relatedToEvent ?? true
-  );
+  const relatedToEvent: boolean = Boolean(body?.relatedToEvent ?? true);
 
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
   if (!OPENAI_API_KEY) {
-    // keep dev/demo working
-    return new Response(JSON.stringify({ prompts: fallback(count), from: "fallback:no-key" }), {
-      headers: { "content-type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        prompts: fallback(count),
+        usedFallback: true,
+        reason: "Missing OPENAI_API_KEY on server",
+      }),
+      { headers: { "content-type": "application/json" }, status: 200 }
+    );
   }
 
-  const system = `You are a creative generator of “Would You Rather” pairs.
-Return JSON ONLY in the form:
-{"prompts":[{"optionA":"...","optionB":"..."}, ...]}
+  const system = `You are a creative event content generator.
+Return ONLY a JSON array of objects like:
+[
+  { "optionA": "...", "optionB": "..." }
+]
 
 Rules:
-- Return exactly N pairs (N is provided).
-- Make them fun, punchy, vivid; each option ≤ ~80 chars.
-- Inclusive and safe for general audiences.
+- Produce exactly N pairs (N given by the user).
+- Make them fun, punchy, and balanced; each option ≤ ~80 chars.
+- Inclusive, safe for general audiences; avoid sensitive/controversial topics.
 - No duplicates or near-duplicates.
-- If told to relate to the event, infer the theme ONLY from NAME and DESCRIPTION (e.g., coding, baking, startups, design) and weave it naturally.
-- Otherwise, keep them universally engaging.
-- No extra commentary; JSON only.`;
+- Style: lively and concrete, not generic (avoid vague tropes).
+- If asked to relate to the event, infer the theme ONLY from the event NAME and DESCRIPTION (e.g., coding, baking, startups, design) and weave it naturally into the options.
+- If not asked to relate, generate universally engaging pairs suitable for a mixed audience.
+- Output JSON only—no extra commentary.`;
 
   const relateLine = relatedToEvent
-    ? `Relate to the event’s theme inferred ONLY from name/description.`
-    : `Do NOT tailor to any theme; keep universal.`;
+    ? `Relate to the event's theme inferred ONLY from name/description.`
+    : `Do NOT tailor to a theme; keep universal.`;
 
   const user = `Event name: ${name || "(unspecified)"}
 Event description: ${description || "(unspecified)"}
 
 ${relateLine}
-N: ${count}
-Respond as: {"prompts":[{"optionA":"...","optionB":"..."}]}`;
+Number of pairs to generate (N): ${count}
+
+Return JSON ONLY.`;
 
   try {
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -89,9 +95,7 @@ Respond as: {"prompts":[{"optionA":"...","optionB":"..."}]}`;
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        temperature: 0.9,
-        // Force JSON object output
-        response_format: { type: "json_object" },
+        temperature: 0.95,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
@@ -99,44 +103,47 @@ Respond as: {"prompts":[{"optionA":"...","optionB":"..."}]}`;
       }),
     });
 
-    const rawText = await resp.text(); // capture raw for debugging
-    let data: any = null;
-    try { data = JSON.parse(rawText); } catch {}
-
     if (!resp.ok) {
-      // Surface the failure so you can see what's wrong in the browser console
+      const errText = await resp.text().catch(() => "");
       return new Response(
         JSON.stringify({
           prompts: fallback(count),
-          from: "fallback:http",
-          status: resp.status,
-          statusText: resp.statusText,
-          raw: rawText?.slice(0, 500),
+          usedFallback: true,
+          reason: `OpenAI HTTP ${resp.status}: ${errText.slice(0, 200)}`,
         }),
         { headers: { "content-type": "application/json" }, status: 200 }
       );
     }
 
-    const text = data?.choices?.[0]?.message?.content ?? "";
-    const prompts = safeParsePrompts(text);
+    const data = await resp.json();
+    const text: string = data?.choices?.[0]?.message?.content ?? "";
+    const prompts = extractJsonArray(text);
 
     if (!prompts.length) {
       return new Response(
-        JSON.stringify({ prompts: fallback(count), from: "fallback:parse", raw: text?.slice(0, 500) }),
+        JSON.stringify({
+          prompts: fallback(count),
+          usedFallback: true,
+          reason: `Model returned non-JSON or empty. First 200 chars: ${text.slice(0, 200)}`,
+        }),
         { headers: { "content-type": "application/json" }, status: 200 }
       );
     }
 
-    // Ensure exactly N
     const exact = prompts.slice(0, count);
     while (exact.length < count) exact.push(...fallback(count - exact.length));
 
-    return new Response(JSON.stringify({ prompts: exact.slice(0, count) }), {
-      headers: { "content-type": "application/json" },
-    });
-  } catch (err: any) {
     return new Response(
-      JSON.stringify({ prompts: fallback(count), from: "fallback:exception", error: String(err?.message || err) }),
+      JSON.stringify({ prompts: exact.slice(0, count), usedFallback: false }),
+      { headers: { "content-type": "application/json" } }
+    );
+  } catch (e: any) {
+    return new Response(
+      JSON.stringify({
+        prompts: fallback(count),
+        usedFallback: true,
+        reason: `Fetch/Network error: ${e?.message || "unknown"}`,
+      }),
       { headers: { "content-type": "application/json" }, status: 200 }
     );
   }
