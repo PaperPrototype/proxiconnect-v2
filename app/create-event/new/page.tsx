@@ -295,7 +295,7 @@ const NewEventFlow = () => {
                           value={prompt.optionA}
                           onChange={(e) => updatePrompt(index, 'optionA', e.target.value)}
                           placeholder="Have the ability to fly"
-                          className="w-full px-6 py-4 text-lg border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all"
+                          className="w-full px-6 py-4 text-lg border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all placeholder-gray-500"
                         />
                       </div>
                       <div className="flex gap-3">
@@ -306,7 +306,7 @@ const NewEventFlow = () => {
                             value={prompt.optionB}
                             onChange={(e) => updatePrompt(index, 'optionB', e.target.value)}
                             placeholder="Have the ability to turn invisible"
-                            className="w-full px-6 py-4 text-lg border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all"
+                            className="w-full px-6 py-4 text-lg border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all placeholder-gray-500"
                           />
                         </div>
                         {eventData.prompts.length > 1 && (
