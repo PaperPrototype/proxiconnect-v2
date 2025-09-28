@@ -1,18 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
+import supabase from "../../lib/supabase";
 
 const CreateEventPage = () => {
   const [userName, setUserName] = useState('User');
+  const [events, setEvents]: [any[], Dispatch<SetStateAction<never[]>>] = useState([])
 
   useEffect(() => {
+    getData();
+  }, []);
+
+  async function getData() {
     // Get user data from localStorage
     const userData = localStorage.getItem('userData');
     if (userData) {
       const user = JSON.parse(userData);
       setUserName(user.name || 'User');
+      const {data} = await supabase.from("events").select().eq("profile_id", user.id);
+      setEvents(data as [] || []);
     }
-  }, []);
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 relative">
@@ -25,8 +33,8 @@ const CreateEventPage = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-gray-600">Welcome, {userName}</span>
-              <div className="w-10 h-10 rounded-full border-2 border-blue-500 flex items-center justify-center">
-                <div className="w-6 h-6 rounded-full border-2 border-blue-500"></div>
+              <div className="aspect-square rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center p-2 ">
+                🐼
               </div>
             </div>
           </div>
@@ -50,21 +58,34 @@ const CreateEventPage = () => {
           <div className="mb-20">
             <h2 className="text-2xl font-medium text-gray-800 mb-8">Your Events</h2>
             
-            {/* Empty State */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <div className="w-8 h-8 text-gray-400">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
+            { events.length > 0 ? 
+              events.map((item, index) => (
+                <li key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="w-8 h-8 text-gray-400">
+                      {item.name}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-medium text-gray-800 mb-2"> Code {item.code}</h3>
+                  <p className="text-gray-600 mb-6">Create your first event to start building connections</p>
+                </li>
+              ))
+              :
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-8 h-8 text-gray-400">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
                 </div>
+                <h3 className="text-xl font-medium text-gray-800 mb-2">No events yet</h3>
+                <p className="text-gray-600 mb-6">Create your first event to start building connections</p>
               </div>
-              <h3 className="text-xl font-medium text-gray-800 mb-2">No events yet</h3>
-              <p className="text-gray-600 mb-6">Create your first event to start building connections</p>
-            </div>
+            }
           </div>
         </div>
       </main>

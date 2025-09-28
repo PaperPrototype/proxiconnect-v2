@@ -1,13 +1,17 @@
 "use client";
 
+import supabase from '@/lib/supabase';
 import React, { useState, useEffect } from 'react';
 
 const AvatarSelectionPage = () => {
   const [selectedAvatar, setSelectedAvatar] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [eventCode, setEventCode] = useState('');
+  const [eventId, setEventId] = useState('');
+  const [eventName, setEventName] = useState('');
 
   const avatars = [
     { key: 'panda', emoji: '🐼', name: 'Panda' },
@@ -27,14 +31,29 @@ const AvatarSelectionPage = () => {
   useEffect(() => {
     // Get event code from URL path /join/[id]
     if (typeof window !== 'undefined') {
-      const pathParts = window.location.pathname.split('/');
-      const code = pathParts[2]; // /join/[ID] -> index 2 is the ID
-      
-      if (code) {
-        setEventCode(code);
-      }
+      getEvent();
     }
   }, []);
+
+  function getEvent() {
+    const eId = localStorage.getItem("eventId");
+    const eName = localStorage.getItem("eventName");
+
+    if (!eId || !eName) {
+      setError("No event was selected.")
+      return;
+    }
+
+    const pathParts = window.location.pathname.split('/');
+    const code = pathParts[2]; // /join/[ID] -> index 2 is the ID
+    
+    if (code) {
+      setEventCode(code);
+    }
+    
+    setEventId(eId);
+    setEventName(eName);
+  }
 
   const selectAvatar = (avatarKey: string) => {
     setSelectedAvatar(avatarKey);
@@ -47,10 +66,25 @@ const AvatarSelectionPage = () => {
       return;
     }
 
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+
     setIsLoading(true);
     
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { data, error:dbErr } = await supabase.from("profiles").upsert({
+      username: email,
+      name: name,
+    }, {
+      onConflict: "username"
+    }).select().maybeSingle()
+
+    if (dbErr) {
+      setError("There was an error. Please try again " + dbErr.message + "");
+      return;
+    }
     
     try {
       const finalAvatar = selectedAvatar || avatars[Math.floor(Math.random() * avatars.length)].key;
@@ -58,6 +92,8 @@ const AvatarSelectionPage = () => {
       // Store avatar and name info
       localStorage.setItem('selectedAvatar', finalAvatar);
       localStorage.setItem('attendeeName', name.trim());
+      localStorage.setItem('attendeeEmail', email.trim());
+      localStorage.setItem('attendeeId', data.id);
       localStorage.setItem('eventCode', eventCode);
       
       // Redirect to Would You Rather game
@@ -74,7 +110,7 @@ const AvatarSelectionPage = () => {
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-semibold text-gray-800 mb-2">
-            Join OSC Hackathon Event
+            Join {eventName} Event
           </h1>
           <p className="text-gray-600">Choose your avatar and enter your name</p>
           <div className="mt-2 text-sm text-blue-600 font-medium">
@@ -84,13 +120,28 @@ const AvatarSelectionPage = () => {
 
         {/* Name Input */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm placeholder:text-gray-500 font-medium text-gray-700 mb-2">
             Your Name
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            maxLength={30}
+          />
+        </div>
+
+        {/* Email Input */}
+        <div className="mb-6">
+          <label className="block text-sm placeholder:text-gray-500 font-medium text-gray-700 mb-2">
+            Your Email
+          </label>
+          <input
+            type="text"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your name"
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
             maxLength={30}

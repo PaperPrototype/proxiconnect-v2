@@ -1,5 +1,6 @@
 "use client";
 
+import supabase from '@/lib/supabase';
 import React, { useState, useRef, useEffect } from 'react';
 
 const JoinCodeEntry = () => {
@@ -43,16 +44,16 @@ const JoinCodeEntry = () => {
     setIsLoading(true);
     setError('');
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // validate the code
+    const { data, error: dbErr } = await supabase.from("events").select().eq("code", eventCode).maybeSingle();
 
     try {
-      // For demo: hardcode validation for 432981
-      if (eventCode === '432981') {
-        // Redirect to avatar selection page
-        window.location.href = `/join/${eventCode}`;
+      if (dbErr) {
+        setError("Invalid event code.");
       } else {
-        setError('Invalid event code. Try: 432981');
+        localStorage.setItem("eventId", data.id);
+        localStorage.setItem("eventName", data.name);
+        window.location.href = '/join/' + eventCode;
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');

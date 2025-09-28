@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import supabase from '@/lib/supabase';
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 
 const WouldYouRatherGame = () => {
   const [currentPrompt, setCurrentPrompt] = useState(0);
@@ -12,6 +13,37 @@ const WouldYouRatherGame = () => {
   const [eventCode, setEventCode] = useState('');
   const [avatar, setAvatar] = useState('');
   const [attendeeName, setAttendeeName] = useState('');
+  const [eventId, setEventId] = useState('');
+  const [eventName, setEventName] = useState('');
+  const [questions, setQuestions]: [any[], Dispatch<SetStateAction<never[]>>] = useState([]);
+
+  const testQuestions = [
+    {
+      id: 100,
+      question_1: "Have the ability to fly",
+      question_2: "Have the ability to turn invisible"
+    },
+    {
+      id: 200,
+      question_1: "Always code in Python",
+      question_2: "Always code in JavaScript"
+    },
+    {
+      id: 300,
+      question_1: "Work from a beach",
+      question_2: "Work from a mountain cabin"
+    },
+    {
+      id: 400,
+      question_1: "Have unlimited coffee",
+      question_2: "Have unlimited pizza"
+    },
+    {
+      id: 500,
+      question_1: "Go viral for something embarrassing",
+      question_2: "Never go viral at all"
+    }
+  ];
 
   const avatarEmojis: Record<string, string> = {
     'panda': '🐼', 'koala': '🐨', 'fox': '🦊', 'cat': '🐱', 'dog': '🐶',
@@ -31,36 +63,38 @@ const WouldYouRatherGame = () => {
       
       setAvatar(storedAvatar || 'panda');
       setAttendeeName(storedName || 'Demo User');
+
+      getEvent();
+
+      getQuestions();
     }
   }, []);
 
-  const prompts = [
-    {
-      id: 1,
-      optionA: "Have the ability to fly",
-      optionB: "Have the ability to turn invisible"
-    },
-    {
-      id: 2,
-      optionA: "Always code in Python",
-      optionB: "Always code in JavaScript"
-    },
-    {
-      id: 3,
-      optionA: "Work from a beach",
-      optionB: "Work from a mountain cabin"
-    },
-    {
-      id: 4,
-      optionA: "Have unlimited coffee",
-      optionB: "Have unlimited pizza"
-    },
-    {
-      id: 5,
-      optionA: "Go viral for something embarrassing",
-      optionB: "Never go viral at all"
+  function getEvent() {
+    const eId = localStorage.getItem("eventId") || '';
+    const eName = localStorage.getItem("eventName") || '';
+
+    const pathParts = window.location.pathname.split('/');
+    const code = pathParts[2]; // /join/[ID] -> index 2 is the ID
+    
+    if (code) {
+      setEventCode(code);
     }
-  ];
+    
+    setEventId(eId);
+    setEventName(eName);
+  }
+
+  async function getQuestions() {
+    const { data } = await supabase.from("questions").select().eq("id", eventId);
+    let cleanData: any[] = [];
+    if (data) {
+      cleanData.concat(...data)
+    }
+    cleanData.concat(testQuestions);
+
+    setQuestions(cleanData as [])
+  }
 
   useEffect(() => {
     if (showResults && !isAnimating) {
@@ -89,7 +123,7 @@ const WouldYouRatherGame = () => {
   };
 
   const nextPrompt = () => {
-    if (currentPrompt < prompts.length - 1) {
+    if (currentPrompt < questions.length - 1) {
       setCurrentPrompt(currentPrompt + 1);
       setHasVoted(false);
       setSelectedChoice(null);
@@ -105,7 +139,7 @@ const WouldYouRatherGame = () => {
     return ((votes[choice] / total) * 100).toFixed(1);
   };
 
-  const currentQuestion = prompts[currentPrompt];
+  const currentQuestion = questions[currentPrompt];
 
   if (showResults) {
     // Results View - Slower animated width transition with dynamic colors
@@ -135,7 +169,7 @@ const WouldYouRatherGame = () => {
               {isAnimating ? votes.A : '0'} votes
             </div>
             <div className="text-base lg:text-xl max-w-sm px-2">
-              {currentQuestion.optionA}
+              {currentQuestion.question_1}
             </div>
           </div>
           {selectedChoice === 'A' && (
@@ -165,7 +199,7 @@ const WouldYouRatherGame = () => {
               {isAnimating ? votes.B : '0'} votes
             </div>
             <div className="text-base lg:text-xl max-w-sm px-2">
-              {currentQuestion.optionB}
+              {currentQuestion.question_2}
             </div>
           </div>
           {selectedChoice === 'B' && (
@@ -178,8 +212,8 @@ const WouldYouRatherGame = () => {
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 bg-black/60 text-white p-4 flex justify-between items-center">
           <div>
-            <div className="font-bold">OSC Hackathon Event</div>
-            <div className="text-sm opacity-90">Question {currentPrompt + 1} of {prompts.length}</div>
+            <div className="font-bold">{eventName} Event</div>
+            <div className="text-sm opacity-90">Question {currentPrompt + 1} of {questions.length}</div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xl">{avatarEmojis[avatar]}</span>
@@ -193,7 +227,7 @@ const WouldYouRatherGame = () => {
           <div className="text-sm mb-4">
             Find someone who chose the opposite option and discuss your reasoning!
           </div>
-          {currentPrompt < prompts.length - 1 ? (
+          {currentPrompt < questions.length - 1 ? (
             <button
               onClick={nextPrompt}
               className="bg-amber-600 text-white px-6 py-2 rounded-full font-medium hover:bg-amber-700 transition-colors shadow-lg"
@@ -223,7 +257,7 @@ const WouldYouRatherGame = () => {
       >
         <div className="text-center p-8">
           <div className="text-3xl lg:text-5xl font-bold mb-6 leading-tight drop-shadow-lg">
-            {currentQuestion.optionA}
+            {currentQuestion.question_1}
           </div>
           {hasVoted && selectedChoice === 'A' && (
             <div className="text-3xl animate-bounce drop-shadow-lg">✓ Your Choice</div>
@@ -241,7 +275,7 @@ const WouldYouRatherGame = () => {
       >
         <div className="text-center p-8">
           <div className="text-3xl lg:text-5xl font-bold mb-6 leading-tight drop-shadow-lg">
-            {currentQuestion.optionB}
+            {currentQuestion.question_2}
           </div>
           {hasVoted && selectedChoice === 'B' && (
             <div className="text-3xl animate-bounce drop-shadow-lg">✓ Your Choice</div>
@@ -253,7 +287,7 @@ const WouldYouRatherGame = () => {
       <div className="absolute top-0 left-0 right-0 bg-black/60 text-white p-4 flex justify-between items-center">
         <div>
           <div className="font-bold">OSC Hackathon Event</div>
-          <div className="text-sm opacity-90">Would You Rather - Question {currentPrompt + 1} of {prompts.length}</div>
+          <div className="text-sm opacity-90">Would You Rather - Question {currentPrompt + 1} of {questions.length}</div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xl">{avatarEmojis[avatar]}</span>

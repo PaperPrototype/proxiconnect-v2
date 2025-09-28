@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import supabase from "../lib/supabase"
 
 const SignupPopup = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const [formData, setFormData] = useState({
@@ -52,22 +53,37 @@ const SignupPopup = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Store user data (in a real app, this would be sent to your backend)
+      // Create a new user if they do not already exist (if we fully implement this then we would send a verification email but that is overkill for the hackathon)
+      const { data, error:dbErr } = await supabase.from("profiles").upsert({
+        username: formData.email,
+        name: formData.name,
+      }, {
+        onConflict: "username"
+      }).select().maybeSingle()
+
+      if (dbErr) {
+        throw new Error(dbErr.message);
+      }
+
+      // Store user data, use this to identify the user when doing api calls later on (in a real app we would do an actual full authentication flow)
       localStorage.setItem('userData', JSON.stringify({
         name: formData.name,
         email: formData.email,
-        isSignedUp: true
+        isSignedUp: true,
+        id: data.id,
       }));
 
       // Close popup and redirect to create event page
       onClose();
       window.location.href = '/create-event';
       
-    } catch (error) {
-      setErrors({ general: 'Something went wrong. Please try again.' });
+    } catch (er) {
+      const typedEr = er as any;
+      if (typedEr.message) {
+        setErrors({ general: typedEr.message });
+      } else {
+        setErrors({ general: 'Something went wrong. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }
