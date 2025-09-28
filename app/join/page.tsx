@@ -51,6 +51,7 @@ const JoinCodeEntry = () => {
       if (dbErr) {
         setError("Invalid event code.");
       } else {
+        console.log("eventId", data.id)
         localStorage.setItem("eventId", data.id);
         localStorage.setItem("eventName", data.name);
         window.location.href = '/join/' + eventCode;

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import supabase from "../../lib/supabase";
+import Link from "next/link"
 
 const CreateEventPage = () => {
   const [userName, setUserName] = useState('User');
@@ -60,14 +61,13 @@ const CreateEventPage = () => {
             
             { events.length > 0 ? 
               events.map((item, index) => (
-                <li key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <div className="w-8 h-8 text-gray-400">
-                      {item.name}
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-medium text-gray-800 mb-2"> Code {item.code}</h3>
-                  <p className="text-gray-600 mb-6">Create your first event to start building connections</p>
+                <li key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12">
+                  <div className="text-2xl font-bold text-black">{item.name}</div>
+                  <h3 className="text-xl font-medium text-gray-800 mb-2">Join Code: {item.code}</h3>
+                  <p className="text-gray-600 mb-6 space-x-5">
+                    <Link href={"/link/" + item.code} className="p-3 rounded bg-gray-200 hover:bg-gray-300">View QR Code</Link>
+                    <span className="underline">https://proxiconnect-v2.vercel.app/join/{item.code}</span>
+                  </p>
                 </li>
               ))
               :

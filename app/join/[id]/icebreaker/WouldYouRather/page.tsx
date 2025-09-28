@@ -1,10 +1,10 @@
 "use client";
 
 import supabase from '@/lib/supabase';
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
+import React, { useState, useEffect, Dispatch, SetStateAction, useMemo } from 'react';
 
 const WouldYouRatherGame = () => {
-  const [currentPrompt, setCurrentPrompt] = useState(0);
+  const [currentPromptIndex, setCurrentPrompt] = useState(0);
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedChoice, setSelectedChoice] = useState<'A' | 'B' | null>(null);
   const [votes, setVotes] = useState({ A: 0, B: 0 });
@@ -86,13 +86,16 @@ const WouldYouRatherGame = () => {
   }
 
   async function getQuestions() {
-    const { data } = await supabase.from("questions").select().eq("id", eventId);
+    console.log("eventId", eventId)
+    const { data } = await supabase.from("questions").select();
     let cleanData: any[] = [];
     if (data) {
-      cleanData.concat(...data)
+      cleanData = [...data];
     }
-    cleanData.concat(testQuestions);
+    cleanData = [...cleanData, ...testQuestions];
 
+    console.log("loading questions from supabase")
+    console.log("testQuestions", testQuestions)
     setQuestions(cleanData as [])
   }
 
@@ -123,8 +126,8 @@ const WouldYouRatherGame = () => {
   };
 
   const nextPrompt = () => {
-    if (currentPrompt < questions.length - 1) {
-      setCurrentPrompt(currentPrompt + 1);
+    if (currentPromptIndex < questions.length - 1) {
+      setCurrentPrompt(currentPromptIndex + 1);
       setHasVoted(false);
       setSelectedChoice(null);
       setShowResults(false);
@@ -139,7 +142,9 @@ const WouldYouRatherGame = () => {
     return ((votes[choice] / total) * 100).toFixed(1);
   };
 
-  const currentQuestion = questions[currentPrompt];
+  const currentQuestion = useMemo(() => {
+    return questions.length > 0 ? questions[currentPromptIndex] : testQuestions;
+  }, [questions]);
 
   if (showResults) {
     // Results View - Slower animated width transition with dynamic colors
@@ -213,7 +218,7 @@ const WouldYouRatherGame = () => {
         <div className="absolute top-0 left-0 right-0 bg-black/60 text-white p-4 flex justify-between items-center">
           <div>
             <div className="font-bold">{eventName} Event</div>
-            <div className="text-sm opacity-90">Question {currentPrompt + 1} of {questions.length}</div>
+            <div className="text-sm opacity-90">Question {currentPromptIndex + 1} of {questions.length}</div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xl">{avatarEmojis[avatar]}</span>
@@ -227,7 +232,7 @@ const WouldYouRatherGame = () => {
           <div className="text-sm mb-4">
             Find someone who chose the opposite option and discuss your reasoning!
           </div>
-          {currentPrompt < questions.length - 1 ? (
+          {currentPromptIndex < questions.length - 1 ? (
             <button
               onClick={nextPrompt}
               className="bg-amber-600 text-white px-6 py-2 rounded-full font-medium hover:bg-amber-700 transition-colors shadow-lg"
@@ -287,7 +292,7 @@ const WouldYouRatherGame = () => {
       <div className="absolute top-0 left-0 right-0 bg-black/60 text-white p-4 flex justify-between items-center">
         <div>
           <div className="font-bold">OSC Hackathon Event</div>
-          <div className="text-sm opacity-90">Would You Rather - Question {currentPrompt + 1} of {questions.length}</div>
+          <div className="text-sm opacity-90">Would You Rather - Question {currentPromptIndex + 1} of {questions.length}</div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xl">{avatarEmojis[avatar]}</span>
