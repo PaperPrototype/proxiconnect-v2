@@ -12,6 +12,7 @@ const AvatarSelectionPage = () => {
   const [eventCode, setEventCode] = useState('');
   const [eventId, setEventId] = useState('');
   const [eventName, setEventName] = useState('');
+  const [loadingEvent, setLoadingEvent] = useState(true);
 
   const avatars = [
     { key: 'panda', emoji: '🐼', name: 'Panda' },
@@ -31,28 +32,51 @@ const AvatarSelectionPage = () => {
   useEffect(() => {
     // Get event code from URL path /join/[id]
     if (typeof window !== 'undefined') {
-      getEvent();
+      getEventFromUrl();
     }
   }, []);
 
-  function getEvent() {
-    const eId = localStorage.getItem("eventId");
-    const eName = localStorage.getItem("eventName");
+  async function getEventFromUrl() {
+    try {
+      // Extract event code from URL path /join/[id]
+      const pathParts = window.location.pathname.split('/');
+      const code = pathParts[2]; // /join/[ID] -> index 2 is the ID
+      
+      if (!code) {
+        setError("Invalid event URL. Please check your link.");
+        setLoadingEvent(false);
+        return;
+      }
 
-    if (!eId || !eName) {
-      setError("No event was selected.")
-      return;
-    }
-
-    const pathParts = window.location.pathname.split('/');
-    const code = pathParts[2]; // /join/[ID] -> index 2 is the ID
-    
-    if (code) {
       setEventCode(code);
+
+      // Fetch event details from database using the code
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('id, name, code')
+        .eq('code', code)
+        .single();
+
+      if (eventError || !eventData) {
+        setError("Event not found. Please check your event code.");
+        setLoadingEvent(false);
+        return;
+      }
+
+      setEventId(eventData.id);
+      setEventName(eventData.name);
+      
+      // Store event info in localStorage for later use
+      localStorage.setItem('eventId', eventData.id);
+      localStorage.setItem('eventName', eventData.name);
+      localStorage.setItem('eventCode', code);
+      
+      setLoadingEvent(false);
+    } catch (err) {
+      console.error('Error fetching event:', err);
+      setError("Failed to load event details. Please try again.");
+      setLoadingEvent(false);
     }
-    
-    setEventId(eId);
-    setEventName(eName);
   }
 
   const selectAvatar = (avatarKey: string) => {
@@ -71,56 +95,75 @@ const AvatarSelectionPage = () => {
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate API delay
-    const { data, error:dbErr } = await supabase.from("profiles").upsert({
-      username: email,
-      name: name,
-    }, {
-      onConflict: "username"
-    }).select().maybeSingle()
-
-    if (dbErr) {
-      setError("There was an error. Please try again " + dbErr.message + "");
+    if (!eventId) {
+      setError('Event information is missing. Please try again.');
       return;
     }
+
+    setIsLoading(true);
     
     try {
+      // Create or update profile
+      const { data, error: dbErr } = await supabase.from("profiles").upsert({
+        username: email,
+        name: name,
+      }, {
+        onConflict: "username"
+      }).select().maybeSingle();
+
+      if (dbErr) {
+        setError("There was an error. Please try again: " + dbErr.message);
+        setIsLoading(false);
+        return;
+      }
+      
       const finalAvatar = selectedAvatar || avatars[Math.floor(Math.random() * avatars.length)].key;
       
-      // Store avatar and name info
+      // Store avatar and attendee info
       localStorage.setItem('selectedAvatar', finalAvatar);
       localStorage.setItem('attendeeName', name.trim());
       localStorage.setItem('attendeeEmail', email.trim());
       localStorage.setItem('attendeeId', data.id);
-      localStorage.setItem('eventCode', eventCode);
       
       // Redirect to Would You Rather game
       window.location.href = `/join/${eventCode}/icebreaker/WouldYouRather`;
     } catch (err) {
+      console.error('Error during submission:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Show loading state while fetching event details
+  if (loadingEvent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Loading Event...</h2>
+          <p className="text-gray-600">Please wait while we fetch the event details.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-semibold text-gray-800 mb-2">
-            Join {eventName} Event
+            Join {eventName || 'Event'}
           </h1>
-          <p className="text-gray-600">Choose your avatar and enter your name</p>
+          <p className="text-gray-600">Choose your avatar and enter your details</p>
           <div className="mt-2 text-sm text-blue-600 font-medium">
-            Event Code: {eventCode || '432981'}
+            Event Code: {eventCode}
           </div>
         </div>
 
         {/* Name Input */}
         <div className="mb-6">
-          <label className="block text-sm placeholder:text-gray-500 font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Your Name
           </label>
           <input
@@ -135,16 +178,16 @@ const AvatarSelectionPage = () => {
 
         {/* Email Input */}
         <div className="mb-6">
-          <label className="block text-sm placeholder:text-gray-500 font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Your Email
           </label>
           <input
-            type="text"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your name"
+            placeholder="Enter your email"
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-            maxLength={30}
+            maxLength={50}
           />
         </div>
 
@@ -187,7 +230,7 @@ const AvatarSelectionPage = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={isLoading || !name.trim()}
+          disabled={isLoading || !name.trim() || !email.trim()}
           className="w-full bg-blue-500 text-white py-4 rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
         >
           {isLoading ? (

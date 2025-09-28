@@ -3,10 +3,12 @@
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import supabase from "../../lib/supabase";
 import Link from "next/link"
+import QRCode from 'qrcode';
 
 const CreateEventPage = () => {
   const [userName, setUserName] = useState('User');
   const [events, setEvents]: [any[], Dispatch<SetStateAction<never[]>>] = useState([])
+  const [qrCodes, setQrCodes] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     getData();
@@ -19,9 +21,36 @@ const CreateEventPage = () => {
       const user = JSON.parse(userData);
       setUserName(user.name || 'User');
       const {data} = await supabase.from("events").select().eq("profile_id", user.id);
-      setEvents(data as [] || []);
+      const eventsData = data as [] || [];
+      setEvents(eventsData);
+      
+      // Generate QR codes for all events
+      generateQRCodes(eventsData);
     }
   }
+
+  const generateQRCodes = async (eventsData: any[]) => {
+    const qrCodeMap: {[key: string]: string} = {};
+    
+    for (const event of eventsData) {
+      try {
+        const joinUrl = `https://proxiconnect-v2.vercel.app/join/${event.code}`;
+        const qrDataUrl = await QRCode.toDataURL(joinUrl, {
+          width: 120,
+          margin: 1,
+          color: {
+            dark: '#374151', // Gray-700
+            light: '#ffffff', // White
+          },
+        });
+        qrCodeMap[event.code] = qrDataUrl;
+      } catch (error) {
+        console.error('Error generating QR code for event:', event.code, error);
+      }
+    }
+    
+    setQrCodes(qrCodeMap);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 relative">
@@ -60,16 +89,61 @@ const CreateEventPage = () => {
             <h2 className="text-2xl font-medium text-gray-800 mb-8">Your Events</h2>
             
             { events.length > 0 ? 
-              events.map((item, index) => (
-                <li key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12">
-                  <div className="text-2xl font-bold text-black">{item.name}</div>
-                  <h3 className="text-xl font-medium text-gray-800 mb-2">Join Code: {item.code}</h3>
-                  <p className="text-gray-600 mb-6 space-x-5">
-                    <Link href={"/link/" + item.code} className="p-3 rounded bg-gray-200 hover:bg-gray-300">View QR Code</Link>
-                    <span className="underline">https://proxiconnect-v2.vercel.app/join/{item.code}</span>
-                  </p>
-                </li>
-              ))
+              <div className="space-y-6">
+                {events.map((item, index) => (
+                  <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                    <div className="flex items-start gap-8">
+                      {/* Event Details */}
+                      <div className="flex-1">
+                        <div className="text-2xl font-bold text-black mb-2">{item.name}</div>
+                        <h3 className="text-xl font-medium text-gray-800 mb-4">Join Code: {item.code}</h3>
+                        <div className="flex flex-wrap gap-4 items-center">
+                          <Link 
+                            href={"/link/" + item.code} 
+                            className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                          >
+                            View Full QR Code
+                          </Link>
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">Direct Link:</span>
+                            <br />
+                            <span className="text-blue-600 underline break-all">
+                              https://proxiconnect-v2.vercel.app/join/{item.code}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* QR Code */}
+                      <div className="flex-shrink-0">
+                        <div className="bg-white p-3 rounded-xl border-2 border-gray-200 shadow-sm">
+                          {qrCodes[item.code] ? (
+                            <img 
+                              src={qrCodes[item.code]} 
+                              alt={`QR Code for ${item.name}`}
+                              className="w-24 h-24"
+                              title="Scan to join event"
+                            />
+                          ) : (
+                            <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <div className="animate-pulse">
+                                <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                  <rect x="7" y="7" width="3" height="3"/>
+                                  <rect x="14" y="7" width="3" height="3"/>
+                                  <rect x="7" y="14" width="3" height="3"/>
+                                  <rect x="14" y="14" width="3" height="3"/>
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 text-center mt-2">Scan to join</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
               :
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
