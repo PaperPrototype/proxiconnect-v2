@@ -73,10 +73,10 @@ const CreateEventPage = () => {
       <div className="fixed bottom-8 right-8">
         <button 
           className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all duration-300 hover:scale-110 animate-pulse shadow-lg hover:shadow-xl"
-          onClick={() => {
-            // Add your create event logic here
-            console.log('Create new event clicked');
-          }}
+       onClick={() => {
+        window.location.href = '/create-event/new';
+        }}
+
         >
           <div className="w-6 h-6 relative">
             <div className="absolute top-1/2 left-1/2 w-4 h-0.5 bg-white transform -translate-x-1/2 -translate-y-1/2"></div>
