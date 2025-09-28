@@ -2,261 +2,170 @@
 
 import React, { useState, useEffect } from 'react';
 
-const WouldYouRatherGame = () => {
-  const [currentPrompt, setCurrentPrompt] = useState(0);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [selectedChoice, setSelectedChoice] = useState<'A' | 'B' | null>(null);
-  const [votes, setVotes] = useState({ A: 0, B: 0 });
-  const [showResults, setShowResults] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+const AvatarSelectionPage = () => {
+  const [selectedAvatar, setSelectedAvatar] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [eventCode, setEventCode] = useState('');
 
-  // Demo data
-  const eventCode = '432981';
-  const attendeeName = 'Demo User';
-  const avatar = 'panda';
-
-  const prompts = [
-    {
-      id: 1,
-      optionA: "Have the ability to fly",
-      optionB: "Have the ability to turn invisible"
-    },
-    {
-      id: 2,
-      optionA: "Always code in Python",
-      optionB: "Always code in JavaScript"
-    },
-    {
-      id: 3,
-      optionA: "Work from a beach",
-      optionB: "Work from a mountain cabin"
-    },
-    {
-      id: 4,
-      optionA: "Have unlimited coffee",
-      optionB: "Have unlimited pizza"
-    },
-    {
-      id: 5,
-      optionA: "Go viral for something embarrassing",
-      optionB: "Never go viral at all"
-    }
+  const avatars = [
+    { key: 'panda', emoji: '🐼', name: 'Panda' },
+    { key: 'koala', emoji: '🐨', name: 'Koala' },
+    { key: 'fox', emoji: '🦊', name: 'Fox' },
+    { key: 'cat', emoji: '🐱', name: 'Cat' },
+    { key: 'dog', emoji: '🐶', name: 'Dog' },
+    { key: 'rabbit', emoji: '🐰', name: 'Rabbit' },
+    { key: 'bear', emoji: '🐻', name: 'Bear' },
+    { key: 'tiger', emoji: '🐯', name: 'Tiger' },
+    { key: 'lion', emoji: '🦁', name: 'Lion' },
+    { key: 'monkey', emoji: '🐵', name: 'Monkey' },
+    { key: 'pig', emoji: '🐷', name: 'Pig' },
+    { key: 'frog', emoji: '🐸', name: 'Frog' }
   ];
 
   useEffect(() => {
-    if (showResults && !isAnimating) {
-      setIsAnimating(true);
+    // Get event code from URL path /join/[id]
+    if (typeof window !== 'undefined') {
+      const pathParts = window.location.pathname.split('/');
+      const code = pathParts[2]; // /join/[ID] -> index 2 is the ID
+      
+      if (code) {
+        setEventCode(code);
+      }
     }
-  }, [showResults]);
+  }, []);
 
-  const handleVote = async (choice: 'A' | 'B') => {
-    if (hasVoted) return;
-
-    setSelectedChoice(choice);
-    setHasVoted(true);
-
-    // Simulate API delay
-    setTimeout(() => {
-      // Demo: simulate realistic vote distribution
-      const totalVoters = Math.floor(Math.random() * 50) + 20;
-      const aVotes = choice === 'A' 
-        ? Math.floor(Math.random() * (totalVoters - 5)) + 1 
-        : Math.floor(Math.random() * (totalVoters - 5)) + 1;
-      const bVotes = totalVoters - aVotes;
-
-      setVotes({ A: aVotes, B: bVotes });
-      setShowResults(true);
-    }, 1000);
+  const selectAvatar = (avatarKey: string) => {
+    setSelectedAvatar(avatarKey);
+    setError('');
   };
 
-  const nextPrompt = () => {
-    if (currentPrompt < prompts.length - 1) {
-      setCurrentPrompt(currentPrompt + 1);
-      setHasVoted(false);
-      setSelectedChoice(null);
-      setShowResults(false);
-      setIsAnimating(false);
-      setVotes({ A: 0, B: 0 });
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
     }
-  };
 
-  const getPercentage = (choice: 'A' | 'B'): string => {
-    const total = votes.A + votes.B;
-    if (total === 0) return '50.0';
-    return ((votes[choice] / total) * 100).toFixed(1);
-  };
-
-  const currentQuestion = prompts[currentPrompt];
-
-  if (showResults) {
-    // Results View - Slower animated width transition with dynamic colors
-    const percentageA = parseFloat(getPercentage('A'));
-    const percentageB = parseFloat(getPercentage('B'));
-    const isAWinning = percentageA > percentageB;
+    setIsLoading(true);
     
-    return (
-      <div className="h-screen flex">
-        {/* Option A Results */}
-        <div 
-          className={`flex flex-col justify-center items-center text-white relative transition-all ease-out ${
-            isAWinning 
-              ? 'bg-gradient-to-br from-pink-500 via-red-600 to-orange-600 brightness-110 saturate-150' 
-              : 'bg-gradient-to-br from-pink-300 via-red-400 to-orange-400 brightness-75 saturate-75'
-          }`}
-          style={{ 
-            width: isAnimating ? `${percentageA}%` : '50%',
-            transitionDuration: '6000ms'
-          }}
-        >
-          <div className="text-center p-4">
-            <div className="text-4xl lg:text-6xl font-bold mb-4 transition-all duration-1000" style={{ transitionDelay: '3000ms' }}>
-              {isAnimating ? getPercentage('A') : '50.0'}%
-            </div>
-            <div className="text-lg lg:text-2xl font-medium mb-2 transition-all duration-1000" style={{ transitionDelay: '3500ms' }}>
-              {isAnimating ? votes.A : '0'} votes
-            </div>
-            <div className="text-base lg:text-xl max-w-sm px-2">
-              {currentQuestion.optionA}
-            </div>
-          </div>
-          {selectedChoice === 'A' && (
-            <div className="absolute top-4 right-4 bg-white/30 rounded-full p-3">
-              <span className="text-3xl">✓</span>
-            </div>
-          )}
-        </div>
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    try {
+      const finalAvatar = selectedAvatar || avatars[Math.floor(Math.random() * avatars.length)].key;
+      
+      // Store avatar and name info
+      localStorage.setItem('selectedAvatar', finalAvatar);
+      localStorage.setItem('attendeeName', name.trim());
+      localStorage.setItem('eventCode', eventCode);
+      
+      // Redirect to Would You Rather game (default for demo)
+      window.location.href = `/join/${eventCode}/icebreaker/WouldYouRather`;
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        {/* Option B Results */}
-        <div 
-          className={`flex flex-col justify-center items-center text-white relative transition-all ease-out ${
-            !isAWinning 
-              ? 'bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-700 brightness-110 saturate-150' 
-              : 'bg-gradient-to-br from-blue-300 via-purple-400 to-indigo-500 brightness-75 saturate-75'
-          }`}
-          style={{ 
-            width: isAnimating ? `${percentageB}%` : '50%',
-            transitionDuration: '6000ms'
-          }}
-        >
-          <div className="text-center p-4">
-            <div className="text-4xl lg:text-6xl font-bold mb-4 transition-all duration-1000" style={{ transitionDelay: '3000ms' }}>
-              {isAnimating ? getPercentage('B') : '50.0'}%
-            </div>
-            <div className="text-lg lg:text-2xl font-medium mb-2 transition-all duration-1000" style={{ transitionDelay: '3500ms' }}>
-              {isAnimating ? votes.B : '0'} votes
-            </div>
-            <div className="text-base lg:text-xl max-w-sm px-2">
-              {currentQuestion.optionB}
-            </div>
-          </div>
-          {selectedChoice === 'B' && (
-            <div className="absolute top-4 right-4 bg-white/30 rounded-full p-3">
-              <span className="text-3xl">✓</span>
-            </div>
-          )}
-        </div>
-
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 bg-black/60 text-white p-4 flex justify-between items-center">
-          <div>
-            <div className="font-bold">OSC Hackathon Event</div>
-            <div className="text-sm opacity-90">Question {currentPrompt + 1} of {prompts.length}</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🐼</span>
-            <span className="font-medium">{attendeeName}</span>
-          </div>
-        </div>
-
-        {/* Connection Prompt */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-yellow-400 to-amber-400 text-yellow-900 p-6 text-center">
-          <div className="font-bold text-lg mb-2">💬 Time to Connect!</div>
-          <div className="text-sm mb-4">
-            Find someone who chose the opposite option and discuss your reasoning!
-          </div>
-          {currentPrompt < prompts.length - 1 ? (
-            <button
-              onClick={nextPrompt}
-              className="bg-amber-600 text-white px-6 py-2 rounded-full font-medium hover:bg-amber-700 transition-colors shadow-lg"
-            >
-              Next Question →
-            </button>
-          ) : (
-            <div className="bg-green-600 text-white px-6 py-2 rounded-full font-medium shadow-lg">
-              Game Complete! 🎉
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Voting View
   return (
-    <div className="h-screen flex">
-      {/* Option A */}
-      <button
-        onClick={() => handleVote('A')}
-        disabled={hasVoted}
-        className={`w-1/2 bg-gradient-to-br from-pink-400 via-red-500 to-orange-500 flex flex-col justify-center items-center text-white transition-all duration-300 ${
-          hasVoted ? 'cursor-not-allowed opacity-75' : 'hover:brightness-110 active:scale-95'
-        }`}
-      >
-        <div className="text-center p-8">
-          <div className="text-3xl lg:text-5xl font-bold mb-6 leading-tight drop-shadow-lg">
-            {currentQuestion.optionA}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-semibold text-gray-800 mb-2">
+            Join OSC Hackathon Event
+          </h1>
+          <p className="text-gray-600">Choose your avatar and enter your name</p>
+          <div className="mt-2 text-sm text-blue-600 font-medium">
+            Event Code: {eventCode || '432981'}
           </div>
-          {hasVoted && selectedChoice === 'A' && (
-            <div className="text-3xl animate-bounce drop-shadow-lg">✓ Your Choice</div>
-          )}
         </div>
-      </button>
 
-      {/* Option B */}
-      <button
-        onClick={() => handleVote('B')}
-        disabled={hasVoted}
-        className={`w-1/2 bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-600 flex flex-col justify-center items-center text-white transition-all duration-300 ${
-          hasVoted ? 'cursor-not-allowed opacity-75' : 'hover:brightness-110 active:scale-95'
-        }`}
-      >
-        <div className="text-center p-8">
-          <div className="text-3xl lg:text-5xl font-bold mb-6 leading-tight drop-shadow-lg">
-            {currentQuestion.optionB}
+        {/* Name Input */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Your Name
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            maxLength={30}
+          />
+        </div>
+
+        {/* Avatar Grid */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          {avatars.map((avatar) => (
+            <button
+              key={avatar.key}
+              onClick={() => selectAvatar(avatar.key)}
+              className={`aspect-square rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center p-2 ${
+                selectedAvatar === avatar.key
+                  ? 'border-blue-500 bg-blue-50 scale-105'
+                  : 'border-gray-200 hover:border-gray-300 hover:scale-105'
+              }`}
+            >
+              <span className="text-2xl mb-1">{avatar.emoji}</span>
+              <span className="text-xs text-gray-600 text-center">{avatar.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Selected Avatar Preview */}
+        {selectedAvatar && (
+          <div className="bg-gray-50 rounded-xl p-4 mb-6 text-center">
+            <p className="text-sm text-gray-600 mb-2">You'll appear as:</p>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl">
+                {avatars.find(a => a.key === selectedAvatar)?.emoji}
+              </span>
+              <span className="font-medium text-gray-800">{name || 'Your Name'}</span>
+            </div>
           </div>
-          {hasVoted && selectedChoice === 'B' && (
-            <div className="text-3xl animate-bounce drop-shadow-lg">✓ Your Choice</div>
-          )}
-        </div>
-      </button>
+        )}
 
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 bg-black/60 text-white p-4 flex justify-between items-center">
-        <div>
-          <div className="font-bold">OSC Hackathon Event</div>
-          <div className="text-sm opacity-90">Would You Rather - Question {currentPrompt + 1} of {prompts.length}</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🐼</span>
-          <span className="font-medium">{attendeeName}</span>
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={isLoading || !name.trim()}
+          className="w-full bg-blue-500 text-white py-4 rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Continuing...
+            </>
+          ) : (
+            'Continue to Icebreaker Game'
+          )}
+        </button>
+
+        <p className="text-center text-xs text-gray-500 mt-4">
+          No avatar selected? We'll pick a cute one for you!
+        </p>
+
+        {/* Back Button */}
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <button
+            onClick={() => window.location.href = '/join'}
+            className="w-full text-gray-500 hover:text-gray-700 transition-colors font-medium"
+          >
+            ← Back to Code Entry
+          </button>
         </div>
       </div>
-
-      {/* Question Prompt - Moved higher and smaller */}
-      <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-xl text-center backdrop-blur-sm">
-        <div className="text-lg lg:text-2xl font-bold">Would You Rather...</div>
-      </div>
-
-      {hasVoted && !showResults && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Collecting votes...</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default WouldYouRatherGame;
+export default AvatarSelectionPage;
+
