@@ -1,111 +1,103 @@
 // app/api/generate-prompts/route.ts
-export const runtime = "nodejs"; // ensure server runtime
+import { NextResponse } from "next/server";
 
-type Prompt = { optionA: string; optionB: string };
+const PROXI_BASE_URL = process.env.PROXI_BASE_URL || "https://api.ai.it.ufl.edu/v1";
+const PROXI_API_KEY  = process.env.PROXI_API_KEY; // put your UF key in .env.local
+const PROXI_MODEL    = process.env.PROXI_MODEL || "gpt-3.5-turbo";
 
-function fallback(count: number): Prompt[] {
-  const seeds: Prompt[] = [
-    { optionA: "Arrive 15 minutes early", optionB: "Stay 15 minutes late" },
-    { optionA: "Talk to someone new first", optionB: "Stick with your crew first" },
-    { optionA: "Show a project you’re proud of", optionB: "Ask someone about theirs" },
-    { optionA: "Eat snacks immediately", optionB: "Save snacks for after" },
-    { optionA: "Join the first activity", optionB: "Watch one round before joining" },
-    { optionA: "Lead a quick demo", optionB: "Host a quick Q&A" },
-    { optionA: "Stand front row", optionB: "Find a cozy back seat" },
-  ];
-  return seeds.slice(0, Math.max(1, count));
-}
-
-function extractJsonArray(text: string): Prompt[] {
-  const code = text.match(/```json\s*([\s\S]*?)```/i)?.[1] ?? text;
-  try {
-    const arr = JSON.parse(code);
-    if (Array.isArray(arr)) {
-      return arr
-        .map((p) => ({
-          optionA: String(p?.optionA ?? "").trim(),
-          optionB: String(p?.optionB ?? "").trim(),
-        }))
-        .filter((p) => p.optionA && p.optionB);
-    }
-  } catch {}
-  return [];
-}
+const FALLBACK: { optionA: string; optionB: string }[] = [
+  { optionA: "Arrive 15 minutes early", optionB: "Stay 15 minutes late" },
+  { optionA: "Talk to someone new first", optionB: "Stick with your crew first" },
+  { optionA: "Show a project you’re proud of", optionB: "Ask someone about theirs" },
+  { optionA: "Eat snacks immediately", optionB: "Save snacks for after" },
+  { optionA: "Join the first activity", optionB: "Watch one round before joining" },
+  { optionA: "Lead a quick demo", optionB: "Host a quick Q&A" },
+];
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
-  const name: string = (body?.name ?? "").toString();
-  const description: string = (body?.description ?? "").toString();
-  const count: number = Math.max(1, Number(body?.count ?? 5));
-  const relatedToEvent: boolean = Boolean(body?.relatedToEvent ?? true);
-
-  // in production this would be an encrypted secret key
-  const UF_API_KEY =
-    "9ba60c72465dcf7c8d0317b6e5784420190b3248cc291a5559d7988aa3f08858";
-
-  const BASE_URL = "https://api.ai.it.ufl.edu";
-  const MODEL = "gpt-3.5-turbo"; // model served by the proxy
-
-  const system = `You generate fun, engaging "Would you rather" questions for live events.
-Return ONLY a JSON array like:
-[
-  { "optionA": "…", "optionB": "…" }
-]
-
-Rules:
-- Exactly N pairs (N provided by the user).
-- Each option is vivid, specific, punchy (≤ ~80 chars).
-- Balanced, playful, inclusive. Avoid NSFW/controversial topics.
-- No duplicates or near-duplicates.
-- Use concrete imagery and variety; avoid generic clichés.
-- If relatedToEvent=true: infer the theme ONLY from event name + description (e.g., coding, baking, design) and weave it naturally.
-- If relatedToEvent=false: make them universal.
-- Return JSON only—no prose.`;
-
-  const user = `Event name: ${name || "(unspecified)"}
-Event description: ${description || "(unspecified)"}
-Make related: ${relatedToEvent}
-Number of pairs: ${count}`;
-
   try {
-    const resp = await fetch(`${BASE_URL}/v1/chat/completions`, {
+    const { name, description, count = 5, relatedToEvent = true } = await req.json();
+
+    if (!PROXI_API_KEY) {
+      return NextResponse.json(
+        { prompts: FALLBACK.slice(0, count), usedFallback: true, reason: "Missing PROXI_API_KEY on server" },
+        { status: 200 }
+      );
+    }
+
+    const sys = `You generate pairs of short, punchy "Would You Rather" options.
+Return ONLY a JSON array of objects with exactly:
+[{ "optionA": "...", "optionB": "..." }, ...] (length = ${count})
+Keep each option under 80 characters. No explanations.`;
+
+    const user = relatedToEvent
+      ? `Event name: ${name || "(none)"}\nEvent description: ${description || "(none)"}\nMake them on-theme.`
+      : `General audience. Not event-specific.`;
+
+    const resp = await fetch(`${PROXI_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${UF_API_KEY}`,
+        "Authorization": `Bearer ${PROXI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: MODEL,
-        temperature: 0.9,
+        model: PROXI_MODEL,
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: sys },
           { role: "user", content: user },
         ],
+        temperature: 0.8,
       }),
     });
 
     if (!resp.ok) {
-      return new Response(
-        JSON.stringify({ prompts: fallback(count), usedFallback: true, reason: `HTTP ${resp.status}` }),
-        { headers: { "content-type": "application/json" } }
+      const text = await resp.text(); // helpful for 401 diagnostics
+      console.error("Proxy error:", resp.status, resp.statusText, text);
+      return NextResponse.json(
+        { prompts: FALLBACK.slice(0, count), usedFallback: true, reason: `Proxy ${resp.status}: ${resp.statusText}` },
+        { status: 200 }
       );
     }
 
     const data = await resp.json();
-    const text = data?.choices?.[0]?.message?.content ?? "";
-    const prompts = extractJsonArray(text);
 
-    // ensure exact length
-    const exact = prompts.slice(0, count);
-    while (exact.length < count) exact.push(...fallback(count - exact.length));
+    const content =
+      data?.choices?.[0]?.message?.content ??
+      data?.choices?.[0]?.message ??
+      "";
 
-    return new Response(JSON.stringify({ prompts: exact, usedFallback: false }), {
-      headers: { "content-type": "application/json" },
-    });
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({ prompts: fallback(count), usedFallback: true, reason: err?.message || "Error" }),
-      { headers: { "content-type": "application/json" } }
+    let prompts: Array<{ optionA: string; optionB: string }> = [];
+    try {
+      // In case the model wraps JSON in code fences, strip them:
+      const cleaned = String(content).replace(/^```json\s*/i, "").replace(/```$/i, "");
+      prompts = JSON.parse(cleaned);
+    } catch {
+      // attempt to extract JSON with a loose regex
+      const match = String(content).match(/\[([\s\S]*)\]/);
+      if (match) {
+        prompts = JSON.parse(match[0]);
+      }
+    }
+
+    if (!Array.isArray(prompts) || prompts.length === 0) {
+      return NextResponse.json(
+        { prompts: FALLBACK.slice(0, count), usedFallback: true, reason: "Proxy returned no usable prompts" },
+        { status: 200 }
+      );
+    }
+
+    // Enforce exact length
+    const trimmed = prompts.slice(0, count).map(p => ({
+      optionA: String(p.optionA ?? "").slice(0, 80),
+      optionB: String(p.optionB ?? "").slice(0, 80),
+    }));
+
+    return NextResponse.json({ prompts: trimmed, usedFallback: false });
+  } catch (e: any) {
+    console.error("generate-prompts error:", e);
+    return NextResponse.json(
+      { prompts: FALLBACK.slice(0, 5), usedFallback: true, reason: e?.message || "Unexpected error" },
+      { status: 200 }
     );
   }
 }
