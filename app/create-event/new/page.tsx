@@ -45,11 +45,12 @@ const NewEventFlow = () => {
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // AI UX state
+  // AI UX
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [relatedToEvent, setRelatedToEvent] = useState(true);
 
-  // Single, stable 6-digit ID for this draft
+  // Stable 6-digit event id
   const [eventId] = useState<string>(genSixDigitId());
   const joinUrl = useMemo(() => buildJoinUrl(eventId), [eventId]);
 
@@ -69,9 +70,7 @@ const NewEventFlow = () => {
     autoStartIcebreaker: true,
     allowLateJoin: true,
     selectedGame: "would-you-rather",
-    prompts: [
-      { optionA: "Have the ability to fly", optionB: "Have the ability to turn invisible" },
-    ],
+    prompts: [{ optionA: "Have the ability to fly", optionB: "Have the ability to turn invisible" }],
     advanceMode: "auto",
     endMessage: "Icebreaker ended. The event is starting.",
   });
@@ -144,27 +143,36 @@ const NewEventFlow = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // no-op
+      // ignore
     }
   };
 
   // === AI Generate ===
-  async function handleAIGenerate(count = 5) {
+  async function handleAIGenerate() {
     try {
       setAiError(null);
       setAiLoading(true);
+
+      // generate EXACTLY as many as the host has rows (fallback 5 if empty)
+      const count = Math.max(1, eventData.prompts.length || 5);
+
       const res = await fetch("/api/generate-prompts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: eventData.name,
           description: eventData.description,
-          audience: "attendees at this event",
           count,
+          relatedToEvent,
         }),
       });
+
       const data = await res.json();
-      if (!data?.prompts?.length) throw new Error("No prompts returned");
+
+      if (!data?.prompts?.length) {
+        throw new Error("AI returned no prompts (check Network tab for API response).");
+      }
+
       setEventData((prev) => ({ ...prev, prompts: data.prompts }));
     } catch (e: any) {
       setAiError(e?.message || "Could not generate prompts.");
@@ -202,9 +210,7 @@ const NewEventFlow = () => {
                       className={inputBase}
                     />
                     <div className="flex justify-between mt-2">
-                      <p className="text-gray-600">
-                        Use a short, memorable title people can recognize on the projector
-                      </p>
+                      <p className="text-gray-600">Use a short, memorable title people can recognize on the projector</p>
                       <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
                         {eventData.name.length}/80
                       </span>
@@ -276,17 +282,13 @@ const NewEventFlow = () => {
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 sticky top-6 border-2 border-blue-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Live Preview</h3>
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-200">
-                  <h4 className="text-xl font-bold text-gray-900 mb-3">
-                    {eventData.name || "Your Event Name"}
-                  </h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-3">{eventData.name || "Your Event Name"}</h4>
                   <div className="space-y-2 text-gray-700">
                     <p>Date & time will appear here</p>
                     {eventData.location && <p>{eventData.location}</p>}
                     {eventData.capacity && <p>Up to {eventData.capacity} people</p>}
                   </div>
-                  <p className="text-gray-800 mt-4 leading-relaxed">
-                    {eventData.description.substring(0, 120)}...
-                  </p>
+                  <p className="text-gray-800 mt-4 leading-relaxed">{eventData.description.substring(0, 120)}...</p>
                 </div>
               </div>
             </div>
@@ -313,9 +315,7 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">🤥</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Two Truths & a Lie</h3>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
-                      COMING SOON
-                    </span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
                   </div>
                   <p className="text-gray-500">Share three statements; the room guesses the fib</p>
                 </div>
@@ -326,9 +326,7 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">💬</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Speed Mingles</h3>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
-                      COMING SOON
-                    </span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
                   </div>
                   <p className="text-gray-500">Timed 1:1 rotations with conversation starters</p>
                 </div>
@@ -370,6 +368,7 @@ const NewEventFlow = () => {
                           <button
                             onClick={() => removePrompt(index)}
                             className="mt-12 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-xl"
+                            aria-label={`Remove question ${index + 1}`}
                           >
                             ×
                           </button>
@@ -378,6 +377,21 @@ const NewEventFlow = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={relatedToEvent}
+                    onChange={(e) => setRelatedToEvent(e.target.checked)}
+                    className="w-5 h-5 accent-emerald-600"
+                    id="chk-related"
+                  />
+                  <label htmlFor="chk-related" className="text-gray-800 font-medium">
+                    Make it related to the event
+                  </label>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-4 mb-8">
@@ -405,11 +419,11 @@ const NewEventFlow = () => {
                 </button>
 
                 <button
-                  onClick={() => handleAIGenerate(5)}
+                  onClick={handleAIGenerate}
                   disabled={aiLoading}
                   className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-bold hover:from-emerald-600 hover:to-teal-700 transform hover:scale-105 transition-all shadow-lg disabled:opacity-60"
                 >
-                  {aiLoading ? "Generating…" : "✨ AI Generate 5"}
+                  {aiLoading ? "Generating…" : "✨ AI Generate"}
                 </button>
               </div>
 
@@ -474,13 +488,12 @@ const NewEventFlow = () => {
                 <p className="text-gray-800 mb-4 leading-relaxed">{eventData.description.substring(0, 200)}...</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {eventData.location && <p className="font-semibold text-gray-800">{eventData.location}</p>}
-                  {eventData.capacity && (
-                    <p className="font-semibold text-gray-800">Up to {eventData.capacity} attendees</p>
-                  )}
+                  {eventData.capacity && <p className="font-semibold text-gray-800">Up to {eventData.capacity} attendees</p>}
                 </div>
               </div>
             </div>
 
+            {/* Icebreaker summary */}
             <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
               <div className="flex justify-between items-start mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">Icebreaker</h3>
@@ -500,18 +513,18 @@ const NewEventFlow = () => {
               </div>
             </div>
 
-            {/* SHARE YOUR EVENT: Left = QR Placeholder, Right = Click-to-copy 6-digit ID */}
+            {/* SHARE: Left = QR placeholder, Right = code copy */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 border-2 border-blue-200">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Share Your Event</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                {/* Left: Placeholder box */}
+                {/* QR placeholder */}
                 <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-6 flex items-center justify-center">
                   <div className="w-48 h-48 md:w-56 md:h-56 bg-gray-200 flex items-center justify-center text-gray-500 font-semibold rounded">
                     QR Code
                   </div>
                 </div>
 
-                {/* Right: 6-digit ID (click to copy) */}
+                {/* 6-digit ID (click to copy) */}
                 <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
                   <p className="text-gray-700 mb-2">Tap to copy the event ID</p>
                   <button
@@ -590,7 +603,7 @@ const NewEventFlow = () => {
       {/* Main Content */}
       <main className="py-12 px-6">{renderStepContent()}</main>
 
-      {/* Sticky Footer */}
+         {/* Sticky Footer */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 shadow-lg">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <button
@@ -620,27 +633,40 @@ const NewEventFlow = () => {
         <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 p-6 overflow-y-auto border-l border-gray-200">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-900">Help</h3>
-            <button onClick={() => setShowHelp(false)} className="text-gray-400 hover:text-gray-600 text-2xl">
+            <button
+              onClick={() => setShowHelp(false)}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+              aria-label="Close help"
+            >
               ×
             </button>
           </div>
           <div className="space-y-6 text-gray-700">
             <p className="font-semibold">Step-by-step tips for creating your event:</p>
+
             <div>
               <h4 className="font-bold text-gray-900 mb-2">Basic Info</h4>
               <p>Choose a catchy event name and describe what attendees can expect.</p>
             </div>
-            <div>
-              <h4 className="font-bold text-gray-900 mb-2">Date & Time</h4>
-              <p>Set when your event starts and ends. Enable auto-start for seamless icebreaking.</p>
-            </div>
+
             <div>
               <h4 className="font-bold text-gray-900 mb-2">Icebreaker</h4>
-              <p>Would You Rather prompts help attendees connect and start conversations.</p>
+              <p>
+                Use the “✨ AI Generate” button to fill your questions. Check
+                “Make it related to the event” if you want the AI to infer a theme
+                only from your event name and description. It will generate exactly as
+                many questions as you have rows.
+              </p>
             </div>
+
             <div>
-              <h4 className="font-bold text-gray-900 mb-2">Review</h4>
-              <p>Double-check everything looks good before creating your event.</p>
+              <h4 className="font-bold text-gray-900 mb-2">Advance Mode</h4>
+              <p>Choose auto-advance for a smooth flow, or manual if you want control.</p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-gray-900 mb-2">Share</h4>
+              <p>Copy the 6-digit code or share the link shown on the Review step.</p>
             </div>
           </div>
         </div>
