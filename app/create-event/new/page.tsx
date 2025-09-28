@@ -85,7 +85,7 @@ const NewEventFlow = () => {
 
   const updateEventData = (field: keyof EventData, value: string | boolean) => {
     setEventData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    if ((errors as any)[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validateStep = (step: number) => {
@@ -147,12 +147,13 @@ const NewEventFlow = () => {
     }
   };
 
-  // === AI Generate (calls the secure server route that reads OPENAI_API_KEY) ===
+  // === AI Generate ===
   async function handleAIGenerate() {
     try {
       setAiError(null);
       setAiLoading(true);
 
+      // Generate EXACTLY as many as there are rows (fallback 5 if empty)
       const count = Math.max(1, eventData.prompts.length || 5);
 
       const res = await fetch("/api/generate-prompts", {
@@ -183,7 +184,8 @@ const NewEventFlow = () => {
       setAiLoading(false);
     }
   }
-  // darker input styles
+
+  // styles
   const inputBase =
     "w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300 text-gray-900 placeholder-gray-400";
   const inputPurple =
@@ -317,7 +319,9 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">🤥</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Two Truths & a Lie</h3>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
+                      COMING SOON
+                    </span>
                   </div>
                   <p className="text-gray-500">Share three statements; the room guesses the fib</p>
                 </div>
@@ -328,7 +332,9 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">💬</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Speed Mingles</h3>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
+                      COMING SOON
+                    </span>
                   </div>
                   <p className="text-gray-500">Timed 1:1 rotations with conversation starters</p>
                 </div>
@@ -490,7 +496,9 @@ const NewEventFlow = () => {
                 <p className="text-gray-800 mb-4 leading-relaxed">{eventData.description.substring(0, 200)}...</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {eventData.location && <p className="font-semibold text-gray-800">{eventData.location}</p>}
-                  {eventData.capacity && <p className="font-semibold text-gray-800">Up to {eventData.capacity} attendees</p>}
+                  {eventData.capacity && (
+                    <p className="font-semibold text-gray-800">Up to {eventData.capacity} attendees</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -515,7 +523,7 @@ const NewEventFlow = () => {
               </div>
             </div>
 
-            {/* SHARE: Left = QR placeholder, Right = code copy */}
+            {/* SHARE */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 border-2 border-blue-200">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Share Your Event</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -605,7 +613,7 @@ const NewEventFlow = () => {
       {/* Main Content */}
       <main className="py-12 px-6">{renderStepContent()}</main>
 
-         {/* Sticky Footer */}
+      {/* Sticky Footer */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 shadow-lg">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <button
@@ -654,10 +662,9 @@ const NewEventFlow = () => {
             <div>
               <h4 className="font-bold text-gray-900 mb-2">Icebreaker</h4>
               <p>
-                Use the “✨ AI Generate” button to fill your questions. Check
-                “Make it related to the event” if you want the AI to infer a theme
-                only from your event name and description. It will generate exactly as
-                many questions as you have rows.
+                Use the “✨ AI Generate” button to fill your questions. Check “Make it related to the event”
+                if you want the AI to infer a theme only from your event name and description. It will
+                generate exactly as many questions as you have rows.
               </p>
             </div>
 
