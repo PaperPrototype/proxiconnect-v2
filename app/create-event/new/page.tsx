@@ -198,7 +198,7 @@ const NewEventFlow = () => {
                         value={eventData.capacity}
                         onChange={(e) => updateEventData('capacity', e.target.value)}
                         placeholder="Leave blank if unlimited"
-                        className="w-full px-6 py-4 text-lg border-2 border-gray-700 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300"
+                        className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300"
                       />
                     </div>
                   </div>
@@ -210,7 +210,7 @@ const NewEventFlow = () => {
                       value={eventData.contactEmail}
                       onChange={(e) => updateEventData('contactEmail', e.target.value)}
                       placeholder="your@email.com"
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-700 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all hover:border-gray-300"
+                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all hover:border-gray-300"
                     />
                     <div className="flex items-center mt-3">
                       <input
@@ -263,7 +263,7 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">🤥</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Two Truths & a Lie</h3>
-                    <span className="bg-gray-700 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
                   </div>
                   <p className="text-gray-500">Share three statements; the room guesses the fib</p>
                 </div>
@@ -274,7 +274,7 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">💬</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Speed Mingles</h3>
-                    <span className="bg-gray-700 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
                   </div>
                   <p className="text-gray-500">Timed 1:1 rotations with conversation starters</p>
                 </div>
@@ -376,7 +376,7 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">🤥</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Two Truths & a Lie</h3>
-                    <span className="bg-gray-700 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
                   </div>
                   <p className="text-gray-500">Share three statements; the room guesses the fib</p>
                 </div>
@@ -387,7 +387,7 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">💬</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Speed Mingles</h3>
-                    <span className="bg-gray-700 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
                   </div>
                   <p className="text-gray-500">Timed 1:1 rotations with conversation starters</p>
                 </div>
@@ -570,7 +570,7 @@ const NewEventFlow = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-700 sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -599,7 +599,7 @@ const NewEventFlow = () => {
                         ? `bg-gradient-to-r ${step.color} text-white shadow-lg`
                         : currentStep > step.id
                         ? 'bg-green-100 text-green-700 border-2 border-green-200'
-                        : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-700'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
                     }`}
                   >
                     <span className="text-xl">{step.icon}</span>
@@ -621,7 +621,7 @@ const NewEventFlow = () => {
       </main>
 
       {/* Sticky Footer */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-700 p-6 shadow-lg">
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 shadow-lg">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <button
             onClick={() => currentStep > 1 && setCurrentStep(currentStep - 1)}
@@ -647,7 +647,7 @@ const NewEventFlow = () => {
 
       {/* Help Panel */}
       {showHelp && (
-        <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 p-6 overflow-y-auto border-l border-gray-700">
+        <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 p-6 overflow-y-auto border-l border-gray-200">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-900">Help</h3>
             <button
