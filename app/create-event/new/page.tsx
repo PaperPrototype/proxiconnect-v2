@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import supabase from '@/lib/supabase';
+
+// TODO create an event with supabase and relate it to the profile_id stored in 
 
 interface Prompt {
   optionA: string;
@@ -44,6 +47,7 @@ const NewEventFlow = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
 
   // AI UX
   const [aiLoading, setAiLoading] = useState(false);
@@ -109,9 +113,62 @@ const NewEventFlow = () => {
     else handleCreateEvent();
   };
 
-  const handleCreateEvent = () => {
-    alert(`Event created successfully! Join code: ${eventId}`);
-    window.location.href = "/create-event";
+  const handleCreateEvent = async () => {
+    try {
+      setIsCreating(true);
+      setErrors({});
+
+      // Get user data from localStorage
+      const userDataStr = localStorage.getItem('userData');
+      if (!userDataStr) {
+        throw new Error('You must be signed in to create an event');
+      }
+
+      const userData = JSON.parse(userDataStr);
+      if (!userData.id) {
+        throw new Error('Invalid user data. Please sign in again.');
+      }
+
+      // Create the event
+      const { data: eventResult, error: eventError } = await supabase
+        .from('events')
+        .insert({
+          profile_id: userData.id,
+          name: eventData.name,
+          guide: eventData.description,
+          code: eventId
+        })
+        .select()
+        .single();
+
+      if (eventError) {
+        throw new Error(`Failed to create event: ${eventError.message}`);
+      }
+
+      // Create questions for the event
+      const questions = eventData.prompts.map(prompt => ({
+        event_id: eventResult.id,
+        question_1: prompt.optionA,
+        question_2: prompt.optionB
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('questions')
+        .insert(questions);
+
+      if (questionsError) {
+        throw new Error(`Failed to create questions: ${questionsError.message}`);
+      }
+
+      // Success! Redirect to the event page
+      window.location.href = "/create-event";
+      
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      setErrors({ general: error.message || 'Failed to create event. Please try again.' });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const addPrompt = () => {
@@ -481,6 +538,13 @@ const NewEventFlow = () => {
               <p className="text-xl text-gray-600">Review your event details and let's get this party started</p>
             </div>
 
+            {/* Error display */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-center">
+                {errors.general}
+              </div>
+            )}
+
             <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
               <div className="flex justify-between items-start mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">Event Summary</h3>
@@ -630,9 +694,10 @@ const NewEventFlow = () => {
             </button>
             <button
               onClick={handleContinue}
-              className="px-10 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 font-bold transform hover:scale-105 transition-all shadow-lg"
+              disabled={isCreating}
+              className="px-10 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 font-bold transform hover:scale-105 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {currentStep === 3 ? "Create Event" : "Continue"}
+              {isCreating ? "Creating..." : currentStep === 3 ? "Create Event" : "Continue"}
             </button>
           </div>
         </div>
@@ -662,7 +727,7 @@ const NewEventFlow = () => {
             <div>
               <h4 className="font-bold text-gray-900 mb-2">Icebreaker</h4>
               <p>
-                Use the “✨ AI Generate” button to fill your questions. Check “Make it related to the event”
+                Use the "✨ AI Generate" button to fill your questions. Check "Make it related to the event"
                 if you want the AI to infer a theme only from your event name and description. It will
                 generate exactly as many questions as you have rows.
               </p>

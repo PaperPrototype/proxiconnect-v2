@@ -169,7 +169,6 @@ const CreateEventPage = () => {
         <button 
           className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
           onClick={() => {
-            alert('Button clicked!');
             window.location.href = '/create-event/new';
           }}
         >
