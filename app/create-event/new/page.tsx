@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from "react";
 
 interface Prompt {
   optionA: string;
@@ -34,87 +34,87 @@ interface Step {
   color: string;
 }
 
+const genSixDigitId = () => String(Math.floor(100000 + Math.random() * 900000));
+const buildJoinUrl = (eventId: string) => {
+  if (typeof window === "undefined") return `/join/${eventId}`;
+  return `${window.location.origin}/join/${eventId}`;
+};
+
 const NewEventFlow = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [showHelp, setShowHelp] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  // Single, stable 6-digit ID for this draft
+  const [eventId] = useState<string>(genSixDigitId());
+  const joinUrl = useMemo(() => buildJoinUrl(eventId), [eventId]);
+
   const [eventData, setEventData] = useState<EventData>({
-    name: '',
+    name: "",
     description:
-      'Kick off the night by checking in and jumping into a quick icebreaker to meet new people. We will have short intros, a friendly debate round, and time to mingle before the main talk begins. Snacks provided. Bring a friend!',
-    location: '',
-    capacity: '',
-    contactEmail: '',
+      "Kick off the night by checking in and jumping into a quick icebreaker to meet new people. We will have short intros, a friendly debate round, and time to mingle before the main talk begins. Snacks provided. Bring a friend!",
+    location: "",
+    capacity: "",
+    contactEmail: "",
     enableContactSharing: false,
-    startDate: '',
-    startTime: '',
-    endTime: '',
-    timeZone: 'America/Los_Angeles',
-    doorsOpen: '15 min before',
+    startDate: "",
+    startTime: "",
+    endTime: "",
+    timeZone: "America/Los_Angeles",
+    doorsOpen: "15 min before",
     autoStartIcebreaker: true,
     allowLateJoin: true,
-    selectedGame: 'would-you-rather',
-    prompts: [{ optionA: 'Have the ability to fly', optionB: 'Have the ability to turn invisible' }],
-    advanceMode: 'auto',
-    endMessage: 'Icebreaker ended. The event is starting.',
+    selectedGame: "would-you-rather",
+    prompts: [
+      { optionA: "Have the ability to fly", optionB: "Have the ability to turn invisible" },
+    ],
+    advanceMode: "auto",
+    endMessage: "Icebreaker ended. The event is starting.",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const steps: Step[] = [
-    { id: 1, title: 'Basic info', icon: '✨', color: 'from-yellow-400 to-orange-500' },
-    { id: 2, title: 'Icebreaker', icon: '🎯', color: 'from-pink-500 to-purple-500' },
-    { id: 3, title: 'Review & create', icon: '🚀', color: 'from-purple-500 to-blue-500' },
+    { id: 1, title: "Basic info", icon: "✨", color: "from-yellow-400 to-orange-500" },
+    { id: 2, title: "Icebreaker", icon: "🎯", color: "from-pink-500 to-purple-500" },
+    { id: 3, title: "Review & create", icon: "🚀", color: "from-purple-500 to-blue-500" },
   ];
 
   const updateEventData = (field: keyof EventData, value: string | boolean) => {
     setEventData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validateStep = (step: number) => {
     const newErrors: Record<string, string> = {};
-
     if (step === 1) {
-      if (!eventData.name.trim()) {
-        newErrors.name = 'Event name is required';
-      }
-      if (!eventData.description.trim()) {
-        newErrors.description = 'Event description is required';
-      }
+      if (!eventData.name.trim()) newErrors.name = "Event name is required";
+      if (!eventData.description.trim()) newErrors.description = "Event description is required";
     }
-
     if (step === 2) {
       if (eventData.prompts.length === 0 || !eventData.prompts.some((p) => p.optionA && p.optionB)) {
-        newErrors.prompts = 'Add at least one complete prompt to continue';
+        newErrors.prompts = "Add at least one complete prompt to continue";
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleContinue = () => {
-    if (validateStep(currentStep)) {
-      if (currentStep < 3) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        handleCreateEvent();
-      }
-    }
+    if (!validateStep(currentStep)) return;
+    if (currentStep < 3) setCurrentStep((s) => s + 1);
+    else handleCreateEvent();
   };
 
   const handleCreateEvent = () => {
-    const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    alert(`Event created successfully! Join code: ${joinCode}`);
-    window.location.href = '/create-event';
+    alert(`Event created successfully! Join code: ${eventId}`);
+    window.location.href = "/create-event";
   };
 
   const addPrompt = () => {
     setEventData((prev) => ({
       ...prev,
-      prompts: [...prev.prompts, { optionA: '', optionB: '' }],
+      prompts: [...prev.prompts, { optionA: "", optionB: "" }],
     }));
   };
 
@@ -134,6 +134,24 @@ const NewEventFlow = () => {
     }
   };
 
+  const copyEventId = async () => {
+    try {
+      await navigator.clipboard.writeText(eventId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // no-op
+    }
+  };
+
+  // darker input styles
+  const inputBase =
+    "w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300 text-gray-900 placeholder-gray-400";
+  const inputPurple =
+    "w-full px-6 py-4 text-lg border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300 text-gray-900 placeholder-gray-400";
+  const inputPink =
+    "w-full px-6 py-4 text-lg border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all hover:border-gray-300 text-gray-900 placeholder-gray-400";
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -149,14 +167,16 @@ const NewEventFlow = () => {
                     <input
                       type="text"
                       value={eventData.name}
-                      onChange={(e) => updateEventData('name', e.target.value)}
+                      onChange={(e) => updateEventData("name", e.target.value)}
                       placeholder="Tech & Tacos: Student Startup Night"
                       maxLength={80}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300 placeholder-gray-500"
+                      className={inputBase}
                     />
                     <div className="flex justify-between mt-2">
-                      <p className="text-gray-600">Use a short, memorable title people can recognize on the projector</p>
-                      <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      <p className="text-gray-600">
+                        Use a short, memorable title people can recognize on the projector
+                      </p>
+                      <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
                         {eventData.name.length}/80
                       </span>
                     </div>
@@ -169,9 +189,9 @@ const NewEventFlow = () => {
                     </label>
                     <textarea
                       value={eventData.description}
-                      onChange={(e) => updateEventData('description', e.target.value)}
+                      onChange={(e) => updateEventData("description", e.target.value)}
                       rows={5}
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all hover:border-gray-300 placeholder-gray-500"
+                      className={inputBase}
                     />
                     <p className="text-gray-600 mt-2">Describe the vibe, what to expect, and any logistics</p>
                     {errors.description && <p className="text-pink-500 font-medium mt-2">{errors.description}</p>}
@@ -183,9 +203,9 @@ const NewEventFlow = () => {
                       <input
                         type="text"
                         value={eventData.location}
-                        onChange={(e) => updateEventData('location', e.target.value)}
+                        onChange={(e) => updateEventData("location", e.target.value)}
                         placeholder="Science Hall, Room 210"
-                        className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300 placeholder-gray-500"
+                        className={inputPurple}
                       />
                     </div>
                     <div>
@@ -193,9 +213,9 @@ const NewEventFlow = () => {
                       <input
                         type="number"
                         value={eventData.capacity}
-                        onChange={(e) => updateEventData('capacity', e.target.value)}
+                        onChange={(e) => updateEventData("capacity", e.target.value)}
                         placeholder="Leave blank if unlimited"
-                        className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all hover:border-gray-300 placeholder-gray-500"
+                        className={inputPurple}
                       />
                     </div>
                   </div>
@@ -205,15 +225,15 @@ const NewEventFlow = () => {
                     <input
                       type="email"
                       value={eventData.contactEmail}
-                      onChange={(e) => updateEventData('contactEmail', e.target.value)}
+                      onChange={(e) => updateEventData("contactEmail", e.target.value)}
                       placeholder="your@email.com"
-                      className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all hover:border-gray-300 placeholder-gray-500"
+                      className={inputPink}
                     />
                     <div className="flex items-center mt-3">
                       <input
                         type="checkbox"
                         checked={eventData.enableContactSharing}
-                        onChange={(e) => updateEventData('enableContactSharing', e.target.checked)}
+                        onChange={(e) => updateEventData("enableContactSharing", e.target.checked)}
                         className="w-5 h-5 mr-3 accent-pink-500"
                       />
                       <span className="text-gray-700">Enable contact sharing with attendees</span>
@@ -227,13 +247,17 @@ const NewEventFlow = () => {
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 sticky top-6 border-2 border-blue-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Live Preview</h3>
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-200">
-                  <h4 className="text-xl font-bold text-gray-900 mb-3">{eventData.name || 'Your Event Name'}</h4>
-                  <div className="space-y-2 text-gray-600">
+                  <h4 className="text-xl font-bold text-gray-900 mb-3">
+                    {eventData.name || "Your Event Name"}
+                  </h4>
+                  <div className="space-y-2 text-gray-700">
                     <p>Date & time will appear here</p>
                     {eventData.location && <p>{eventData.location}</p>}
                     {eventData.capacity && <p>Up to {eventData.capacity} people</p>}
                   </div>
-                  <p className="text-gray-700 mt-4 leading-relaxed">{eventData.description.substring(0, 120)}...</p>
+                  <p className="text-gray-800 mt-4 leading-relaxed">
+                    {eventData.description.substring(0, 120)}...
+                  </p>
                 </div>
               </div>
             </div>
@@ -260,7 +284,9 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">🤥</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Two Truths & a Lie</h3>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
+                      COMING SOON
+                    </span>
                   </div>
                   <p className="text-gray-500">Share three statements; the room guesses the fib</p>
                 </div>
@@ -271,7 +297,9 @@ const NewEventFlow = () => {
                   <div className="text-4xl mb-4">💬</div>
                   <div className="flex items-center justify-center mb-3">
                     <h3 className="text-xl font-bold text-gray-500 mr-3">Speed Mingles</h3>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">COMING SOON</span>
+                    <span className="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
+                      COMING SOON
+                    </span>
                   </div>
                   <p className="text-gray-500">Timed 1:1 rotations with conversation starters</p>
                 </div>
@@ -283,16 +311,19 @@ const NewEventFlow = () => {
 
               <div className="space-y-6 mb-8">
                 {eventData.prompts.map((prompt, index) => (
-                  <div key={index} className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200">
+                  <div
+                    key={index}
+                    className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200"
+                  >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-lg font-bold text-gray-900 mb-3">Option A</label>
                         <input
                           type="text"
                           value={prompt.optionA}
-                          onChange={(e) => updatePrompt(index, 'optionA', e.target.value)}
+                          onChange={(e) => updatePrompt(index, "optionA", e.target.value)}
                           placeholder="Have the ability to fly"
-                          className="w-full px-6 py-4 text-lg border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-200 focus:border-pink-500 outline-none transition-all placeholder-gray-500"
+                          className={inputPink}
                         />
                       </div>
                       <div className="flex gap-3">
@@ -301,9 +332,9 @@ const NewEventFlow = () => {
                           <input
                             type="text"
                             value={prompt.optionB}
-                            onChange={(e) => updatePrompt(index, 'optionB', e.target.value)}
+                            onChange={(e) => updatePrompt(index, "optionB", e.target.value)}
                             placeholder="Have the ability to turn invisible"
-                            className="w-full px-6 py-4 text-lg border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 outline-none transition-all placeholder-gray-500"
+                            className={inputPurple}
                           />
                         </div>
                         {eventData.prompts.length > 1 && (
@@ -332,9 +363,9 @@ const NewEventFlow = () => {
                     setEventData((prev) => ({
                       ...prev,
                       prompts: [
-                        { optionA: 'Arrive early to events', optionB: 'Stay late at events' },
-                        { optionA: 'Build projects solo', optionB: 'Build projects with a team' },
-                        { optionA: 'Work from a beach', optionB: 'Work from a mountain cabin' },
+                        { optionA: "Arrive early to events", optionB: "Stay late at events" },
+                        { optionA: "Build projects solo", optionB: "Build projects with a team" },
+                        { optionA: "Work from a beach", optionB: "Work from a mountain cabin" },
                       ],
                     }));
                   }}
@@ -350,7 +381,7 @@ const NewEventFlow = () => {
                 </div>
               )}
 
-              {/* Advance mode (timer removed entirely) */}
+              {/* Advance mode */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
                   <label className="block text-lg font-bold text-gray-900 mb-4">Advance mode</label>
@@ -359,8 +390,8 @@ const NewEventFlow = () => {
                       <input
                         type="radio"
                         value="auto"
-                        checked={eventData.advanceMode === 'auto'}
-                        onChange={(e) => updateEventData('advanceMode', e.target.value)}
+                        checked={eventData.advanceMode === "auto"}
+                        onChange={(e) => updateEventData("advanceMode", e.target.value)}
                         className="mr-3 w-5 h-5 accent-purple-500"
                       />
                       <span className="font-semibold text-gray-900">Auto-advance</span>
@@ -369,8 +400,8 @@ const NewEventFlow = () => {
                       <input
                         type="radio"
                         value="manual"
-                        checked={eventData.advanceMode === 'manual'}
-                        onChange={(e) => updateEventData('advanceMode', e.target.value)}
+                        checked={eventData.advanceMode === "manual"}
+                        onChange={(e) => updateEventData("advanceMode", e.target.value)}
                         className="mr-3 w-5 h-5 accent-purple-500"
                       />
                       <span className="font-semibold text-gray-900">I'll advance manually</span>
@@ -402,10 +433,12 @@ const NewEventFlow = () => {
               </div>
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200">
                 <h4 className="text-2xl font-bold text-gray-900 mb-3">{eventData.name}</h4>
-                <p className="text-gray-700 mb-4 leading-relaxed">{eventData.description.substring(0, 200)}...</p>
+                <p className="text-gray-800 mb-4 leading-relaxed">{eventData.description.substring(0, 200)}...</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {eventData.location && <p className="font-semibold text-gray-800">{eventData.location}</p>}
-                  {eventData.capacity && <p className="font-semibold text-gray-800">Up to {eventData.capacity} attendees</p>}
+                  {eventData.capacity && (
+                    <p className="font-semibold text-gray-800">Up to {eventData.capacity} attendees</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -422,18 +455,44 @@ const NewEventFlow = () => {
               </div>
               <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border-2 border-pink-200">
                 <p className="text-xl font-semibold text-gray-900 mb-2">Would You Rather</p>
-                <p className="text-gray-700 mb-2">{eventData.prompts.length} questions</p>
-                <p className="text-gray-600">
-                  {eventData.advanceMode === 'auto' ? 'Auto-advance enabled' : 'Manual advance'}
+                <p className="text-gray-800 mb-2">{eventData.prompts.length} questions</p>
+                <p className="text-gray-700">
+                  {eventData.advanceMode === "auto" ? "Auto-advance enabled" : "Manual advance"}
                 </p>
               </div>
             </div>
 
+            {/* SHARE YOUR EVENT: Left = QR Placeholder, Right = Click-to-copy 6-digit ID */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 border-2 border-blue-200">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Share Your Event</h3>
-              <p className="text-gray-600 mb-6">Your join code will be generated after creating the event.</p>
-              <div className="bg-white rounded-xl p-6 border-2 border-dashed border-gray-300 text-center">
-                <p className="text-gray-500 text-lg">Join code: Will be generated</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                {/* Left: Placeholder box */}
+                <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-6 flex items-center justify-center">
+                  <div className="w-48 h-48 md:w-56 md:h-56 bg-gray-200 flex items-center justify-center text-gray-500 font-semibold rounded">
+                    QR Code
+                  </div>
+                </div>
+
+                {/* Right: 6-digit ID (click to copy) */}
+                <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+                  <p className="text-gray-700 mb-2">Tap to copy the event ID</p>
+                  <button
+                    onClick={copyEventId}
+                    className="font-extrabold tracking-widest text-4xl md:text-5xl text-gray-900 select-text px-4 py-2 rounded-xl hover:bg-gray-50 active:scale-[0.99] transition"
+                    aria-label="Copy event ID"
+                  >
+                    {eventId}
+                  </button>
+                  <p className={`text-sm mt-3 ${copied ? "text-green-600" : "text-gray-500"}`}>
+                    {copied ? "Copied!" : "Click the code to copy"}
+                  </p>
+
+                  <div className="mt-4">
+                    <p className="text-xs text-gray-500 break-all">
+                      Link: <span className="font-mono">{joinUrl}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -475,14 +534,14 @@ const NewEventFlow = () => {
                       currentStep === step.id
                         ? `bg-gradient-to-r ${step.color} text-white shadow-lg`
                         : currentStep > step.id
-                        ? 'bg-green-100 text-green-700 border-2 border-green-200'
-                        : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
+                        ? "bg-green-100 text-green-700 border-2 border-green-200"
+                        : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200"
                     }`}
                   >
                     <span className="text-xl">{step.icon}</span>
                     <span className="font-semibold">{step.title}</span>
                   </button>
-                  {index < steps.length - 1 && <div className="w-8 h-1 bg-gray-300 rounded"></div>}
+                  {index < steps.length - 1 && <div className="w-8 h-1 bg-gray-300 rounded" />}
                 </React.Fragment>
               ))}
             </div>
@@ -499,20 +558,20 @@ const NewEventFlow = () => {
           <button
             onClick={() => currentStep > 1 && setCurrentStep(currentStep - 1)}
             disabled={currentStep === 1}
-            className="px-8 py-3 text-gray-600 border-2 border-gray-300 rounded-2xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
+            className="px-8 py-3 text-gray-700 border-2 border-gray-300 rounded-2xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all"
           >
             Back
           </button>
 
           <div className="flex gap-4">
-            <button className="px-8 py-3 text-gray-600 border-2 border-gray-300 rounded-2xl hover:bg-gray-50 font-semibold transition-all">
+            <button className="px-8 py-3 text-gray-700 border-2 border-gray-300 rounded-2xl hover:bg-gray-50 font-semibold transition-all">
               Save draft
             </button>
             <button
               onClick={handleContinue}
               className="px-10 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 font-bold transform hover:scale-105 transition-all shadow-lg"
             >
-              {currentStep === 3 ? 'Create Event' : 'Continue'}
+              {currentStep === 3 ? "Create Event" : "Continue"}
             </button>
           </div>
         </div>
@@ -527,7 +586,7 @@ const NewEventFlow = () => {
               ×
             </button>
           </div>
-          <div className="space-y-6 text-gray-600">
+          <div className="space-y-6 text-gray-700">
             <p className="font-semibold">Step-by-step tips for creating your event:</p>
             <div>
               <h4 className="font-bold text-gray-900 mb-2">Basic Info</h4>
@@ -553,4 +612,3 @@ const NewEventFlow = () => {
 };
 
 export default NewEventFlow;
-
