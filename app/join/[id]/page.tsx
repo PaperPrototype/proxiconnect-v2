@@ -60,8 +60,8 @@ const AvatarSelectionPage = () => {
       localStorage.setItem('attendeeName', name.trim());
       localStorage.setItem('eventCode', eventCode);
       
-      // Redirect to attendance form
-      window.location.href = `/join/${eventCode}/attendance`;
+      // Redirect to Would You Rather game (default for demo)
+      window.location.href = `/join/${eventCode}/icebreaker/WouldYouRather`;
     } catch (err) {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -145,7 +145,7 @@ const AvatarSelectionPage = () => {
               Continuing...
             </>
           ) : (
-            'Continue to Attendance Form'
+            'Continue to Icebreaker Game'
           )}
         </button>
 
