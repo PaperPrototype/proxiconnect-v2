@@ -45,6 +45,10 @@ const NewEventFlow = () => {
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
+  // AI UX state
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   // Single, stable 6-digit ID for this draft
   const [eventId] = useState<string>(genSixDigitId());
   const joinUrl = useMemo(() => buildJoinUrl(eventId), [eventId]);
@@ -143,6 +147,31 @@ const NewEventFlow = () => {
       // no-op
     }
   };
+
+  // === AI Generate ===
+  async function handleAIGenerate(count = 5) {
+    try {
+      setAiError(null);
+      setAiLoading(true);
+      const res = await fetch("/api/generate-prompts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: eventData.name,
+          description: eventData.description,
+          audience: "attendees at this event",
+          count,
+        }),
+      });
+      const data = await res.json();
+      if (!data?.prompts?.length) throw new Error("No prompts returned");
+      setEventData((prev) => ({ ...prev, prompts: data.prompts }));
+    } catch (e: any) {
+      setAiError(e?.message || "Could not generate prompts.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   // darker input styles
   const inputBase =
@@ -351,13 +380,14 @@ const NewEventFlow = () => {
                 ))}
               </div>
 
-              <div className="flex gap-4 mb-8">
+              <div className="flex flex-wrap gap-4 mb-8">
                 <button
                   onClick={addPrompt}
                   className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-bold hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
                 >
                   + Add Another Question
                 </button>
+
                 <button
                   onClick={() => {
                     setEventData((prev) => ({
@@ -373,11 +403,19 @@ const NewEventFlow = () => {
                 >
                   Use Examples
                 </button>
+
+                <button
+                  onClick={() => handleAIGenerate(5)}
+                  disabled={aiLoading}
+                  className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-bold hover:from-emerald-600 hover:to-teal-700 transform hover:scale-105 transition-all shadow-lg disabled:opacity-60"
+                >
+                  {aiLoading ? "Generating…" : "✨ AI Generate 5"}
+                </button>
               </div>
 
-              {errors.prompts && (
-                <div className="mb-8 p-6 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl">
-                  <p className="text-red-700 font-bold text-lg">{errors.prompts}</p>
+              {aiError && (
+                <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700">
+                  {aiError}
                 </div>
               )}
 
