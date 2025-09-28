@@ -2,9 +2,196 @@
 
 import React, { useState, useEffect } from 'react';
 
+const SignupPopup = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Store user data (in a real app, this would be sent to your backend)
+      localStorage.setItem('userData', JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        isSignedUp: true
+      }));
+
+      // Close popup and redirect to create event page
+      onClose();
+      window.location.href = '/create-event';
+      
+    } catch (error) {
+      setErrors({ general: 'Something went wrong. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800">Sign Up for ProxiConnect</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Enter your full name"
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Enter your email"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Create a password"
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Confirm your password"
+              />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+              )}
+            </div>
+
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-700 text-sm">{errors.general}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </div>
+
+          <p className="text-center text-sm text-gray-600 mt-4">
+            Already have an account?{' '}
+            <button className="text-blue-500 hover:text-blue-600 font-medium">
+              Sign In
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProxiConnectLanding = () => {
   const [activeTab, setActiveTab] = useState('attendees');
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,6 +201,23 @@ const ProxiConnectLanding = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleCreateEventClick = () => {
+    // Check if user is already signed up
+    const userData = localStorage.getItem('userData');
+    
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user.isSignedUp) {
+        // User is signed up, redirect to create event page
+        window.location.href = '/create-event';
+        return;
+      }
+    }
+    
+    // User is not signed up, show signup popup
+    setShowSignupPopup(true);
+  };
 
   const QRCode = () => (
     <div className="w-30 h-30 bg-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-center mx-auto mb-5">
@@ -80,13 +284,19 @@ const ProxiConnectLanding = () => {
         }
       `}</style>
 
+      {/* Signup Popup */}
+      <SignupPopup 
+        isOpen={showSignupPopup} 
+        onClose={() => setShowSignupPopup(false)} 
+      />
+
       {/* Header */}
       <header 
         className={`sticky top-0 z-50 transition-all duration-300 ${
           headerScrolled 
             ? 'bg-white/98 backdrop-blur-md shadow-lg' 
             : 'bg-white/95 backdrop-blur-md'
-        } border-b border-gray-200`}
+        } border-b border-gray-200 ${showSignupPopup ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
       >
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
@@ -94,13 +304,12 @@ const ProxiConnectLanding = () => {
               ProxiConnect
             </div>
             <div className="flex gap-3">
-              <a 
-                href="#" 
+              <button 
+                onClick={() => setShowSignupPopup(true)}
                 className="px-6 py-2.5 rounded-full text-sm font-medium text-gray-600 border border-gray-300 hover:bg-gray-50 transition-all duration-200"
               >
                 Sign Up
-                
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -124,12 +333,12 @@ const ProxiConnectLanding = () => {
               >
                 Join an Event
               </a>
-              <a 
-                href="#" 
+              <button 
+                onClick={handleCreateEventClick}
                 className="px-8 py-4 text-lg font-medium bg-pink-500 text-white rounded-full hover:bg-pink-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pink-500/30 transition-all duration-200"
               >
                 Create an Event
-              </a>
+              </button>
             </div>
 
             {/* QR Demo */}
@@ -332,17 +541,17 @@ const ProxiConnectLanding = () => {
             </h2>
             <div className="flex gap-4 justify-center">
               <a 
-                href="join" 
+                href="/join" 
                 className="px-8 py-4 text-lg font-medium bg-white text-gray-800 rounded-full hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200"
               >
                 Join an Event
               </a>
-              <a 
-                href="#" 
+              <button 
+                onClick={handleCreateEventClick}
                 className="px-8 py-4 text-lg font-medium bg-white text-gray-800 rounded-full hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200"
               >
                 Create an Event
-              </a>
+              </button>
             </div>
           </div>
         </section>
