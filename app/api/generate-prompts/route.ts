@@ -2,7 +2,6 @@
 import { NextResponse } from "next/server";
 
 const PROXI_BASE_URL = "https://api.ai.it.ufl.edu/v1";
-const PROXI_API_KEY  = "sk-sxvNLvIEC2ib6iVoPUrEyQ"; // put your UF key in .env.local
 const PROXI_MODEL    = "gpt-oss-20b";
 
 const FALLBACK: { optionA: string; optionB: string }[] = [
